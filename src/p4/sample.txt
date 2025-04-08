@@ -1,8 +1,13 @@
 Language EN
-Case snake_case
+Case camelCase
+function integer countOccurrences (integer arr[], integer size, integer val){
+    new count integer = 0
 
-function noType greeting_someone_test() {
-    output "Enter your name: "
-    new string name = input
-    output "Hello, " + name
+    while i == 0 and i < size do {
+    i == i + 1
+    if arr[i]==val then {
+        count = count + 1
+        }
+    }
+    return count
 }

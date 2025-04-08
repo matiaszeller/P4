@@ -71,7 +71,10 @@ literal: integer | decimal | string | BOOLEAN
 
 
 // Parameters in function definitions
-params: TYPE ID ("," TYPE ID)*
+params: param ("," param)*
+param: TYPE ID array_suffix?
+array_suffix: "[" "]"
+
 
 // Types
 TYPE: "boolean" | "integer" | "decimal" | "string" | "noType"
