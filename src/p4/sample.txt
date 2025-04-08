@@ -1,11 +1,8 @@
-Language DK
-Case camelCase
-fn integer myFunc(integer x, integer y) {
-    new integer z = x + y;
-    new integer arr[10];
-    if z > 10 then {
-        output z;
-    } else {
-        output 0;
-    }
+Language EN
+Case snake_case
+
+function noType greeting_someone_test() {
+    output "Enter your name: "
+    new string name = input
+    output "Hello, " + name
 }

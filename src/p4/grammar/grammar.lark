@@ -6,89 +6,87 @@
 %ignore WS_INLINE
 
 // Start Rule
-start: syntax function_def+
+start: syntax function_definition+
 
 // Language and case parameters
 syntax: "Language" LANG NEWLINE "Case" CASE NEWLINE
 
 // Function definition
-function_def: "fn" type ID "(" [params] ")" block
+function_definition: "function" TYPE ID "(" [params] ")" block
 
 // Block definition
 block: "{" NEWLINE? stmt+ (NEWLINE stmt+)* NEWLINE? "}"
 
 // Statements
-?stmt: assignment_stmt ";"
-     | declaration
+?stmt: assignment_stmt
+     | declaration_stmt
      | if_stmt
      | while_stmt
-     | return_stmt ";"
-     | output_stmt ";"
-     | input_stmt ";"
-     | expr_stmt ";"
+     | return_stmt
+     | output_stmt
+     | input_stmt
+     | expr_stmt // An expression can be a statement on its own (e.g., function call)
 
-// Assignment
-assignment_stmt: ID "=" expr_logical
+assignment_stmt: ID "=" expr // Assign any expression result
+declaration_stmt: "new" TYPE ID ["=" expr] // Initialize with any expression result
+if_stmt: "if" expr "then" block ["else" block] // Condition is any expression (type checking later)
+while_stmt: "while" expr "do" block // Condition is any expression (type checking later)
+return_stmt: "return" expr // Return any expression result
+output_stmt: "output" expr // Output any expression result
+input_stmt: "input" // Input doesn't produce an expression directly here
+expr_stmt: expr // Any expression can be a statement
 
-// New keyword
-declaration: "new" type ID ";"
-           | "new" type ID "=" expr_logical ";"
-           | "new" type ID "[" expr_logical "]" ";"
 
-// If statement (bruger then keyword lige nu)
-if_stmt: "if" expr_logical "then" block "else" block
+?expr: or_expr // Start with lowest precedence
 
-// While statement
-while_stmt: "while" expr_logical "do" block
+?or_expr: and_expr ("or" and_expr)*
+?and_expr: not_expr ("and" not_expr)*
+?not_expr: "!" not_expr | comparison_expr
+?comparison_expr: add_expr (("=="|"<"|">") add_expr)? // Allows only one comparison like original; change to * for chaining
+?add_expr: mul_expr (("+"|"-") mul_expr)*
+?mul_expr: unary_expr (("*"|"/"|"%") unary_expr)*
+?unary_expr: "-" unary_expr | postfix_expr // Unary minus has high precedence
+?postfix_expr: primary ( call_suffix | array_access_suffix )* // Function calls, array access
+                | primary
 
-// Return statement
-return_stmt: "return" expr_logical
+// Postfix operations applied to a primary expression
+call_suffix: "(" [arguments] ")"
+array_access_suffix: "[" expr "]" // Standard array access by index
 
-// Output statement
-output_stmt: "output" expr_logical
+// Primary expressions: the highest precedence atoms
+?primary: literal
+        | ID           // Variable identifier
+        | array_literal // Array literal like [1, 2, 3]
+        | "(" expr ")" // Parenthesized expression
 
-// Input statement
-input_stmt: "input"
+// Function call arguments
+arguments: expr ("," expr)*
 
-// Expression statement
-expr_stmt: expr_logical
+// Array literal definition
+array_literal: "[" [array_elements] "]"
+array_elements: expr ("," expr)*
 
-// Expressions
-?expr_logical: expr_not (("and" | "or") expr_not)*
-?expr_not: "!" expr_comparison           -> not_expr
-         | expr_comparison
-?expr_comparison: expr_plus (("<" | ">" | "==") expr_plus)?
-?expr_plus: expr_mult (("+" | "-") expr_mult)*
-?expr_mult: expr_negative (("*" | "/" | "%") expr_negative)*
-?expr_negative: "-" expr_func             -> neg
-              | expr_func
-?expr_func: ID "(" [arglist] ")"          -> func_call
-          | expr_array
-?expr_array: expr_term
-           | ID "[" expr_term "]"         -> array_access
-?expr_term: ID
-          | INT
-          | DOUBLE
-          | BOOL
-          | STRING
-          | "(" expr_logical ")"
+// Literals grouped together
+literal: integer | decimal | string | BOOLEAN
 
-// Function call arguments.
-arglist: expr_not ("," expr_not)*
 
 // Parameters in function definitions
-params: type ID ("," type ID)*
+params: TYPE ID ("," TYPE ID)*
 
 // Types
-type: "boolean" | "integer" | "decimal" | "string" | "noType"
+TYPE: "boolean" | "integer" | "decimal" | "string" | "noType"
 
 // Keywords for language and case style
 LANG: "DK" | "EN"
 CASE: "camelCase" | "snake_case"
 
-// Literals
-BOOL: "true" | "false"
-ID: /[a-z][a-zA-Z0-9]*(?:_[a-z][a-zA-Z0-9]*)*/
-INT: /[0-9]+/
-DOUBLE: /[0-9]+\.[0-9]+/
-STRING: /"([^"\\]*(\\.[^"\\]*)*)"/
+// Literals & Terminals
+integer: DIGIT+
+decimal: DIGIT+"."DIGIT+
+string: /"([^"\\]*(\\.[^"\\]*)*)"/
+ID: LOWERCASE (LOWERCASE|UPPERCASE|DIGIT)* ( "_" (LOWERCASE|UPPERCASE|DIGIT)+ )*
+
+BOOLEAN: "true" | "false"
+LOWERCASE: "a".."z" | "æ" | "ø" | "å"
+UPPERCASE: "A".."Z" | "Æ" | "Ø" | "Å"
+DIGIT: "0".."9" // Simplified range

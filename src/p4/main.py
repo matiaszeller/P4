@@ -1,11 +1,12 @@
 from lark import Lark, Transformer
+from lark.tree import pydot__tree_to_png
 
 # Load grammar
 with open("grammar/grammar.lark", "r") as grammar_file:
     grammar = grammar_file.read()
 
 # Lark parser
-parser = Lark(grammar, parser='lalr', start='start', propagate_positions=True)
+parser = Lark(grammar, parser='earley', start='start')
 
 # Optional transformer to process the parse tree.
 class MyTransformer(Transformer):
@@ -29,6 +30,7 @@ def main():
         print(tree.pretty())
         print("Transformed Tree:")
         print(transformed_tree)
+        pydot__tree_to_png(tree, "tree.png")
     except Exception as e:
         print("Parsing error:", e)
 
