@@ -4,9 +4,10 @@
 %import common.NEWLINE
 %import common.WS_INLINE
 %ignore WS_INLINE
+%ignore COMMENT // For the syntax tree, can be removed if necessary
 
 // Start Rule
-start: syntax function_definition+
+start: syntax [COMMENT]* function_definition+ [NEWLINE]* [COMMENT]*
 
 // Language and case parameters
 syntax: "Language" LANG NEWLINE "Case" CASE NEWLINE
@@ -59,7 +60,6 @@ array_access_suffix: "[" expr "]" // Standard array access by index
         | array_literal // Array literal like [1, 2, 3]
         | "(" expr ")" // Parenthesized expression
 
-// Function call arguments
 arguments: expr ("," expr)*
 
 // Array literal definition
@@ -86,10 +86,12 @@ CASE: "camelCase" | "snake_case"
 // Literals & Terminals
 integer: DIGIT+
 decimal: DIGIT+"."DIGIT+
-string: /"([^"\\]*(\\.[^"\\]*)*)"/
+string: /"([^"\\]*(\\.[^"\\]*)*)"/ // So strings are enclosed in "" and prevents early escape with \ escape characters
 ID: LOWERCASE (LOWERCASE|UPPERCASE|DIGIT)* ( "_" (LOWERCASE|UPPERCASE|DIGIT)+ )*
 
 BOOLEAN: "true" | "false"
 LOWERCASE: "a".."z" | "æ" | "ø" | "å"
 UPPERCASE: "A".."Z" | "Æ" | "Ø" | "Å"
 DIGIT: "0".."9" // Simplified range
+
+COMMENT: /(?:\n)?#[\s\S]*?#/ //Cursed Regex but it matches anything enclosed within # #
