@@ -3,6 +3,7 @@
 // common tokens
 %import common.NEWLINE
 %import common.WS_INLINE
+%import common.INT
 %ignore WS_INLINE
 %ignore COMMENT // For the syntax tree, can be removed if necessary
 
@@ -84,7 +85,7 @@ LANG: "DK" | "EN"
 CASE: "camelCase" | "snake_case"
 
 // Literals & Terminals
-integer: DIGIT+
+integer: INT+
 decimal: DIGIT+"."DIGIT+
 string: /"([^"\\]*(\\.[^"\\]*)*)"/ // So strings are enclosed in "" and prevents early escape with \ escape characters
 ID: LOWERCASE (LOWERCASE|UPPERCASE|DIGIT)* ( "_" (LOWERCASE|UPPERCASE|DIGIT)+ )*
