@@ -44,7 +44,7 @@ expr_stmt: expr // Any expression can be a statement
 ?or_expr: and_expr ("or" and_expr)*
 ?and_expr: not_expr ("and" not_expr)*
 ?not_expr: "!" not_expr | comparison_expr
-?comparison_expr: add_expr (("=="|"<"|">") add_expr)? // Allows only one comparison like original; change to * for chaining
+?comparison_expr: add_expr (("=="|"<"|">") add_expr)?
 ?add_expr: mul_expr (("+"|"-") mul_expr)*
 ?mul_expr: unary_expr (("*"|"/"|"%") unary_expr)*
 ?unary_expr: "-" unary_expr | postfix_expr // Unary minus has high precedence
