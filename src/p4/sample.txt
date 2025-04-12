@@ -1,11 +1,1 @@
-Language DK
-Case camelCase
-fn integer myFunc(integer x, integer y) {
-    new integer z = x + y;
-    new integer arr[10];
-    if z > 10 then {
-        output z;
-    } else {
-        output 0;
-    }
-}
+2.5 - 2 + 4 - 3

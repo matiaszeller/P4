@@ -1,5 +1,7 @@
 from lark import Lark, Transformer
 
+from src.p4.interpreter import Interpreter
+
 # Load grammar
 with open("grammar/grammar.lark", "r") as grammar_file:
     grammar = grammar_file.read()
@@ -26,11 +28,15 @@ def main():
         tree = parser.parse(sample_input)
         transformed_tree = MyTransformer().transform(tree)
         print("Parse Tree:")
-        print(tree.pretty())
+        print(tree)
         print("Transformed Tree:")
         print(transformed_tree)
     except Exception as e:
         print("Parsing error:", e)
+
+    interpreter = Interpreter()
+    result = interpreter.visit(tree.children[0])
+    print(result)
 
 if __name__ == "__main__":
     main()
