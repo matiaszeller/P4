@@ -25,11 +25,11 @@ def main():
 
     try:
         tree = parser.parse(sample_input)
-        transformed_tree = MyTransformer().transform(tree)
+        #transformed_tree = MyTransformer().transform(tree) If we need to add annotation rules we can do it in the transformer class
         print("Parse Tree:")
         print(tree.pretty())
         print("Transformed Tree:")
-        print(transformed_tree)
+        print(tree)
         pydot__tree_to_png(tree, "tree.png") #YOU NEED pydot AND graphviz for this step
     except Exception as e:
         print("Parsing error:", e)

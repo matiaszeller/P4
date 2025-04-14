@@ -71,19 +71,19 @@ call_suffix: "(" [arguments] ")"
 array_access_suffix: "[" expr "]"
 
 // Primary expressions: the highest precedence atoms
-?primary: literal
+?primary: INT+
         | ID
         | array_literal
         | "(" expr ")"
+        | decimal
+        | string
+        | BOOLEAN
 
 arguments: expr ("," expr)*
 
 // Array literal definition
 array_literal: "[" [array_elements] "]"
 array_elements: expr ("," expr)*
-
-// Literals grouped together
-literal: integer | decimal | string | BOOLEAN
 
 // Parameters in function definitions
 params: param ("," param)*
@@ -98,13 +98,8 @@ LANG: "DK" | "EN"
 CASE: "camelCase" | "snake_case"
 
 // Literals & Terminals
-integer: INT+
-decimal: DIGIT+"."DIGIT+
+decimal: INT+"."INT+
 string: /"([^"\\]*(\\.[^"\\]*)*)"/   // Strings enclosed in "" with escapes
-ID: LOWERCASE (LOWERCASE | UPPERCASE | DIGIT)* ( "_" (LOWERCASE | UPPERCASE | DIGIT)+ )*
 BOOLEAN: "true" | "false"
-LOWERCASE: "a".."z" | "æ" | "ø" | "å"
-UPPERCASE: "A".."Z" | "Æ" | "Ø" | "Å"
-DIGIT: "0".."9"
-
+ID: /(?!(true|false|if|else|while|return|function|input|output|then|do)\b)[a-zæøå][a-zA-ZæøåÆØÅ0-9]*(?:_[a-zA-ZæøåÆØÅ0-9]+)*/
 COMMENT: /(?:\n)?#[\s\S]*?#/ // Matches comments enclosed in # #
