@@ -19,6 +19,7 @@ function_definition: "function" TYPE ID "(" [params] ")" block
 // Block definition
 block: "{" NEWLINE? stmt+ (NEWLINE stmt+)* NEWLINE? "}"
 
+
 // Statements
 ?stmt: assignment_stmt
      | declaration_stmt
@@ -39,15 +40,33 @@ input_stmt: "input"
 expr_stmt: expr
 
 
-?expr: or_expr // Start with lowest precedence
+// Expression Rules with explicit operator tokens
 
-?or_expr: and_expr ("or" and_expr)*
-?and_expr: not_expr ("and" not_expr)*
-?not_expr: "!" not_expr | comparison_expr
-?comparison_expr: add_expr (("=="|"<"|">") add_expr)?
-?add_expr: mul_expr (("+"|"-") mul_expr)*
-?mul_expr: unary_expr (("*"|"/"|"%") unary_expr)*
-?unary_expr: "-" unary_expr | postfix_expr
+?expr: or_expr  // Start with lowest precedence
+
+?or_expr: and_expr (OR_OP and_expr)*
+OR_OP: "or"
+
+?and_expr: not_expr (AND_OP not_expr)*
+AND_OP: "and"
+
+?not_expr: NOT_OP not_expr       -> negate
+         | comparison_expr
+NOT_OP: "!"
+
+?comparison_expr: add_expr (COMPARE_OP add_expr)?
+COMPARE_OP: "==" | "<" | ">" | "<=" | ">="
+
+?add_expr: mul_expr (ADD_OP mul_expr)*
+ADD_OP: "+" | "-"
+
+?mul_expr: unary_expr (MUL_OP unary_expr)*
+MUL_OP: "*" | "/" | "%"
+
+?unary_expr: UMINUS unary_expr   -> uminus
+           | postfix_expr
+UMINUS: "-"
+
 ?postfix_expr: primary ( call_suffix | array_access_suffix )* | primary
 
 // Postfix operations applied to a primary expression
@@ -69,12 +88,10 @@ array_elements: expr ("," expr)*
 // Literals grouped together
 literal: integer | decimal | string | BOOLEAN
 
-
 // Parameters in function definitions
 params: param ("," param)*
 param: TYPE ID array_suffix?
 array_suffix: "[" "]"
-
 
 // Types
 TYPE: "boolean" | "integer" | "decimal" | "string" | "noType"
@@ -86,12 +103,11 @@ CASE: "camelCase" | "snake_case"
 // Literals & Terminals
 integer: INT+
 decimal: DIGIT+"."DIGIT+
-string: /"([^"\\]*(\\.[^"\\]*)*)"/ // So strings are enclosed in "" and prevents early escape with \ escape characters
-ID: LOWERCASE (LOWERCASE|UPPERCASE|DIGIT)* ( "_" (LOWERCASE|UPPERCASE|DIGIT)+ )*
-
+string: /"([^"\\]*(\\.[^"\\]*)*)"/   // Strings enclosed in "" with escapes
+ID: LOWERCASE (LOWERCASE | UPPERCASE | DIGIT)* ( "_" (LOWERCASE | UPPERCASE | DIGIT)+ )*
 BOOLEAN: "true" | "false"
 LOWERCASE: "a".."z" | "æ" | "ø" | "å"
 UPPERCASE: "A".."Z" | "Æ" | "Ø" | "Å"
 DIGIT: "0".."9"
 
-COMMENT: /(?:\n)?#[\s\S]*?#/ //Cursed Regex but it matches anything enclosed within # #
+COMMENT: /(?:\n)?#[\s\S]*?#/ // Matches comments enclosed in # #
