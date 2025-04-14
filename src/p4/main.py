@@ -6,7 +6,7 @@ with open("grammar/grammar.lark", "r") as grammar_file:
     grammar = grammar_file.read()
 
 # Lark parser
-parser = Lark(grammar, parser='earley', start='start')
+parser = Lark(grammar, parser='earley', start='start', lexer="dynamic")
 
 # Optional transformer to process the parse tree.
 class MyTransformer(Transformer):

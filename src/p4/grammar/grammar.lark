@@ -27,16 +27,16 @@ block: "{" NEWLINE? stmt+ (NEWLINE stmt+)* NEWLINE? "}"
      | return_stmt
      | output_stmt
      | input_stmt
-     | expr_stmt // An expression can be a statement on its own (e.g., function call)
+     | expr_stmt
 
-assignment_stmt: ID "=" expr // Assign any expression result
-declaration_stmt: "new" TYPE ID ["=" expr] // Initialize with any expression result
-if_stmt: "if" expr "then" block ["else" block] // Condition is any expression (type checking later)
-while_stmt: "while" expr "do" block // Condition is any expression (type checking later)
-return_stmt: "return" expr // Return any expression result
-output_stmt: "output" expr // Output any expression result
-input_stmt: "input" // Input doesn't produce an expression directly here
-expr_stmt: expr // Any expression can be a statement
+assignment_stmt: ID "=" expr
+declaration_stmt: "new" TYPE ID ["=" expr]
+if_stmt: "if" expr "then" block ["else" block]
+while_stmt: "while" expr "do" block
+return_stmt: "return" expr
+output_stmt: "output" expr
+input_stmt: "input"
+expr_stmt: expr
 
 
 ?expr: or_expr // Start with lowest precedence
@@ -47,19 +47,18 @@ expr_stmt: expr // Any expression can be a statement
 ?comparison_expr: add_expr (("=="|"<"|">") add_expr)?
 ?add_expr: mul_expr (("+"|"-") mul_expr)*
 ?mul_expr: unary_expr (("*"|"/"|"%") unary_expr)*
-?unary_expr: "-" unary_expr | postfix_expr // Unary minus has high precedence
-?postfix_expr: primary ( call_suffix | array_access_suffix )* // Function calls, array access
-                | primary
+?unary_expr: "-" unary_expr | postfix_expr
+?postfix_expr: primary ( call_suffix | array_access_suffix )* | primary
 
 // Postfix operations applied to a primary expression
 call_suffix: "(" [arguments] ")"
-array_access_suffix: "[" expr "]" // Standard array access by index
+array_access_suffix: "[" expr "]"
 
 // Primary expressions: the highest precedence atoms
 ?primary: literal
-        | ID           // Variable identifier
-        | array_literal // Array literal like [1, 2, 3]
-        | "(" expr ")" // Parenthesized expression
+        | ID
+        | array_literal
+        | "(" expr ")"
 
 arguments: expr ("," expr)*
 
@@ -93,6 +92,6 @@ ID: LOWERCASE (LOWERCASE|UPPERCASE|DIGIT)* ( "_" (LOWERCASE|UPPERCASE|DIGIT)+ )*
 BOOLEAN: "true" | "false"
 LOWERCASE: "a".."z" | "æ" | "ø" | "å"
 UPPERCASE: "A".."Z" | "Æ" | "Ø" | "Å"
-DIGIT: "0".."9" // Simplified range
+DIGIT: "0".."9"
 
 COMMENT: /(?:\n)?#[\s\S]*?#/ //Cursed Regex but it matches anything enclosed within # #
