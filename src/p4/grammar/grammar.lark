@@ -44,15 +44,12 @@ expr_stmt: expr
 
 ?expr: or_expr  // Start with lowest precedence
 
-?or_expr: and_expr (OR_OP and_expr)*
-OR_OP: "or"
+?or_expr: and_expr ("or" and_expr)*
 
-?and_expr: not_expr (AND_OP not_expr)*
-AND_OP: "and"
+?and_expr: not_expr ("and" not_expr)*
 
-?not_expr: NOT_OP not_expr       -> negate
+?not_expr: "!" not_expr       -> negate
          | comparison_expr
-NOT_OP: "!"
 
 ?comparison_expr: add_expr (COMPARE_OP add_expr)?
 COMPARE_OP: "==" | "<" | ">" | "<=" | ">="
