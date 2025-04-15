@@ -7,7 +7,7 @@ with open("grammar/grammar.lark", "r") as grammar_file:
     grammar = grammar_file.read()
 
 # Lark parser
-parser = Lark(grammar, parser='lalr', start='start', propagate_positions=True)
+parser = Lark(grammar, parser='earley', start='start', lexer='dynamic')
 
 # Optional transformer to process the parse tree.
 class MyTransformer(Transformer):
@@ -28,15 +28,15 @@ def main():
         tree = parser.parse(sample_input)
         transformed_tree = MyTransformer().transform(tree)
         print("Parse Tree:")
-        print(tree)
+        print(tree.children[0].pretty())
         print("Transformed Tree:")
         print(transformed_tree)
+        print('\n')
     except Exception as e:
         print("Parsing error:", e)
 
     interpreter = Interpreter()
-    result = interpreter.visit(tree.children[0])
-    print(result)
+    interpreter.visit(tree.children[0])
 
 if __name__ == "__main__":
     main()

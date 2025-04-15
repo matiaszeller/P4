@@ -1,52 +1,96 @@
 // grammar.lark
 
 // common tokens
+
 %import common.NEWLINE
 %import common.WS_INLINE
+%import common.INT
 %ignore WS_INLINE
+%ignore COMMENT // For the syntax tree, can be removed if necessary
 
 // Start Rule
-start: expr_logical
+start: block
 
+// Block definition
+block: "{" NEWLINE? stmt+ (NEWLINE stmt+)* NEWLINE? "}"
 
-// Expressions
-?expr_logical: expr_not (("and" | "or") expr_not)*
-?expr_not: "!" expr_comparison           -> not_expr
-         | expr_comparison
-?expr_comparison: expr_plus (("<" | ">" | "==") expr_plus)?
-?expr_plus: expr_mult ((PLUS | MINUS) expr_mult)*
-PLUS: "+"
-MINUS: "-"
-?expr_mult: expr_negative (("*" | "/" | "%") expr_negative)*
-?expr_negative: "-" expr_func             -> neg
-              | expr_func
-?expr_func: ID "(" [arglist] ")"          -> func_call
-          | expr_array
-?expr_array: expr_term
-           | ID "[" expr_term "]"         -> array_access
-?expr_term: ID
-          | INT
-          | DOUBLE
-          | BOOL
-          | STRING
-          | "(" expr_logical ")"
+// Statements
+?stmt: assignment_stmt
+     | declaration_stmt
+     | if_stmt
+     | while_stmt
+     | return_stmt
+     | output_stmt
+     | expr_stmt
 
-// Function call arguments.
-arglist: expr_not ("," expr_not)*
+assignment_stmt: ID "=" (expr | input_stmt)
+declaration_stmt: "new" TYPE ID ["=" expr]
+if_stmt: "if" expr "then" block ["else" block]
+while_stmt: "while" expr "do" block
+return_stmt: "return" expr
+output_stmt: "output" expr
+input_stmt: "input"
+expr_stmt: expr
+
+// Expression Rules with explicit operator tokens
+
+?expr: or_expr  // Start with lowest precedence
+
+?or_expr: and_expr ("or" and_expr)*
+
+?and_expr: not_expr ("and" not_expr)*
+
+?not_expr: "!" not_expr       -> negate
+         | comparison_expr
+
+?comparison_expr: add_expr (COMPARE_OP add_expr)?
+COMPARE_OP: "==" | "<" | ">" | "<=" | ">="
+
+?add_expr: mul_expr (ADD_OP mul_expr)*
+ADD_OP: "+" | "-"
+
+?mul_expr: unary_expr (MUL_OP unary_expr)*
+MUL_OP: "*" | "/" | "%"
+
+?unary_expr: "-" unary_expr   -> uminus
+           | postfix_expr
+
+?postfix_expr: primary ( call_suffix | array_access_suffix )* | primary
+
+// Postfix operations applied to a primary expression
+call_suffix: "(" [arguments] ")"
+array_access_suffix: "[" expr "]"
+
+// Primary expressions: the highest precedence atoms
+?primary: INT+
+        | ID
+        | array_literal
+        | "(" expr ")"
+        | decimal
+        | string
+        | BOOLEAN
+
+arguments: expr ("," expr)*
+
+// Array literal definition
+array_literal: "[" [array_elements] "]"
+array_elements: expr ("," expr)*
 
 // Parameters in function definitions
-params: type ID ("," type ID)*
+params: param ("," param)*
+param: TYPE ID array_suffix?
+array_suffix: "[" "]"
 
 // Types
-type: "boolean" | "integer" | "decimal" | "string" | "noType"
+TYPE: "boolean" | "integer" | "decimal" | "string" | "noType"
 
 // Keywords for language and case style
 LANG: "DK" | "EN"
 CASE: "camelCase" | "snake_case"
 
-// Literals
-BOOL: "true" | "false"
-ID: /[a-z][a-zA-Z0-9]*(?:_[a-z][a-zA-Z0-9]*)*/
-INT: /[0-9]+/
-DOUBLE: /[0-9]+\.[0-9]+/
-STRING: /"([^"\\]*(\\.[^"\\]*)*)"/
+// Literals & Terminals
+decimal: INT+"."INT+
+string: /"([^"\\]*(\\.[^"\\]*)*)"/   // Strings enclosed in "" with escapes
+BOOLEAN: "true" | "false"
+ID: /(?!(true|false|if|else|while|return|function|input|output|then|do|input|output|new)\b)[a-zæøå][a-zA-ZæøåÆØÅ0-9]*(?:_[a-zA-ZæøåÆØÅ0-9]+)*/
+COMMENT: /(?:\n)?#[\s\S]*?#/ // Matches comments enclosed in # #
