@@ -1,4 +1,11 @@
-{
-new decimal a = 10
-output a
+Language EN
+Case camelCase
+
+function boolean addup() {
+output 2 + 2
+}
+
+function boolean main () {
+output "main"
+addup()
 }

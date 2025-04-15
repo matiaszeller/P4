@@ -6,6 +6,8 @@ class Interpreter:
     def __init__(self):
         self.env = Environment()
 
+    #Recursive logic for visits
+
     def visit(self, node):
         if isinstance(node, Tree):
             data = node.data
@@ -24,6 +26,12 @@ class Interpreter:
         if bool == True or bool == False:
             return True
         raise Exception(f'{bool} is neither true nor false.')
+
+    ## Start
+
+    def visit_start(self, node):
+        for child in node.children:
+            self.visit(child)
 
     ## Unary Expressions
 
@@ -126,13 +134,26 @@ class Interpreter:
             result = result or self.visit(node.children[i])
         return result
 
-    ## Variables
+    ## Statements
 
     def visit_declaration_stmt(self, node):
         if len(node.children) == 2:
             self.env.declare(node.children[1])
         else:
-            self.env.define(node.children[1], node.children[2])
+            self.env.define(node.children[1], self.visit(node.children[2]))
+
+    def visit_assignment_stmt(self, node):
+        self.env.set(node.children[0], self.visit(node.children[1]))
+
+    def visit_if_stmt(self, node):
+        if self.visit(node.children[0]):
+            self.visit(node.children[1])
+        elif len(node.children) == 3:
+            self.visit(node.children[2])
+
+    def visit_while_stmt(self, node):
+        while self.visit(node.children[0]):
+            self.visit(node.children[1])
 
     ## Block
 
@@ -145,5 +166,21 @@ class Interpreter:
     def visit_output_stmt(self, node):
         print(self.visit(node.children[0]))
 
-    def visit_input_stmt(self, node):
+    def visit_input_expr(self, node):
         return input()
+
+    ## Functions & Arrays
+
+    def visit_function_definition(self, node):
+        if node.children[1] == "main":
+            self.visit(node.children[2])
+        else:
+            self.env.define(node.children[1], node.children[2])
+
+    def visit_postfix_expr(self, node):
+        return self.visit(self.visit(node.children[0]))
+
+    ## Syntax
+
+    def visit_syntax(self, node):
+        print(f'Youre programming in {node.children[0]} using {node.children[2]}\n')

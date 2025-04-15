@@ -9,7 +9,13 @@
 %ignore COMMENT // For the syntax tree, can be removed if necessary
 
 // Start Rule
-start: block
+start: syntax (COMMENT NEWLINE)* function_definition (NEWLINE (COMMENT NEWLINE)* function_definition)* (COMMENT)*
+
+// Language and case parameters
+syntax: "Language" LANG NEWLINE "Case" CASE NEWLINE
+
+// Function definition
+function_definition: "function" TYPE ID "(" [params] ")" block
 
 // Block definition
 block: "{" NEWLINE? stmt+ (NEWLINE stmt+)* NEWLINE? "}"
@@ -23,16 +29,17 @@ block: "{" NEWLINE? stmt+ (NEWLINE stmt+)* NEWLINE? "}"
      | output_stmt
      | expr_stmt
 
-assignment_stmt: ID "=" (expr | input_stmt)
-declaration_stmt: "new" TYPE ID ["=" expr]
+assignment_stmt: ID "=" (expr | input_expr)
+declaration_stmt: "new" TYPE ID ["=" (expr | input_expr)]
 if_stmt: "if" expr "then" block ["else" block]
 while_stmt: "while" expr "do" block
 return_stmt: "return" expr
 output_stmt: "output" expr
-input_stmt: "input"
 expr_stmt: expr
 
 // Expression Rules with explicit operator tokens
+
+input_expr: "input"
 
 ?expr: or_expr  // Start with lowest precedence
 
@@ -92,5 +99,5 @@ CASE: "camelCase" | "snake_case"
 decimal: INT+"."INT+
 string: /"([^"\\]*(\\.[^"\\]*)*)"/   // Strings enclosed in "" with escapes
 BOOLEAN: "true" | "false"
-ID: /(?!(true|false|if|else|while|return|function|input|output|then|do|input|output|new)\b)[a-zæøå][a-zA-ZæøåÆØÅ0-9]*(?:_[a-zA-ZæøåÆØÅ0-9]+)*/
+ID: /(?!(true|false|if|else|while|return|function|input|output|then|do|new)\b)[a-zæøå][a-zA-ZæøåÆØÅ0-9]*(?:_[a-zA-ZæøåÆØÅ0-9]+)*/
 COMMENT: /(?:\n)?#[\s\S]*?#/ // Matches comments enclosed in # #

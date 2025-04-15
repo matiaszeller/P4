@@ -28,7 +28,7 @@ def main():
         tree = parser.parse(sample_input)
         transformed_tree = MyTransformer().transform(tree)
         print("Parse Tree:")
-        print(tree.children[0].pretty())
+        print(tree.pretty())
         print("Transformed Tree:")
         print(transformed_tree)
         print('\n')
@@ -36,7 +36,7 @@ def main():
         print("Parsing error:", e)
 
     interpreter = Interpreter()
-    interpreter.visit(tree.children[0])
+    interpreter.visit(tree)
 
 if __name__ == "__main__":
     main()
