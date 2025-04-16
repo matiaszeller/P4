@@ -21,3 +21,7 @@ class Environment:
         if name not in self.variables:
             raise NameError(f'Variable {name} is not defined')
         self.variables[name] = value
+
+    def print_variables(self):
+        for name, value in self.variables.items():
+            print(f'{name} = {value}')

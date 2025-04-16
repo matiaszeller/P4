@@ -35,7 +35,7 @@ def main():
     except Exception as e:
         print("Parsing error:", e)
 
-    interpreter = Interpreter()
+    interpreter = Interpreter(0)
     interpreter.visit(tree)
 
 if __name__ == "__main__":

@@ -3,8 +3,13 @@ from lark import Tree, Token
 from environment import Environment
 
 class Interpreter:
-    def __init__(self):
-        self.env = Environment()
+    def __init__(self, old_environment):
+        if old_environment == 0:
+            self.env = Environment()
+        else:
+            self.env = old_environment
+
+
 
     #Recursive logic for visits
 
@@ -174,11 +179,20 @@ class Interpreter:
     def visit_function_definition(self, node):
         if node.children[1] == "main":
             self.visit(node.children[2])
-        else:
+        elif len(node.children) == 3:
             self.env.define(node.children[1], node.children[2])
+        else:
+            self.env.define(node.children[1], node.children[3])
+            self.env.define(f'{node.children[1]}_parameters', node.children[2])
 
     def visit_postfix_expr(self, node):
-        return self.visit(self.visit(node.children[0]))
+        function_interpreter = Interpreter(self.env)
+        if len(node.children[1].children) > 0:
+            for i in range(0,len(node.children[1].children[0].children)):
+                parameter_name = self.env.get(node.children[0]+"_parameters").children[i].children[1].value
+                parameter_value = self.visit(node.children[1].children[0].children[i])
+                function_interpreter.env.define(parameter_name, parameter_value)
+        return self.visit(function_interpreter.visit(node.children[0]))
 
     ## Syntax
 
