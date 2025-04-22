@@ -2,6 +2,7 @@ Language EN
 Case camelCase
 function integer countOccurrences (integer arr[], integer size, integer val){
     new integer count = 0
+    new integer arr[]
 
     while true and i < size do {
         i = i + 11.00000001

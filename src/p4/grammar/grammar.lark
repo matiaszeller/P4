@@ -71,7 +71,7 @@ call_suffix: "(" [arguments] ")"
 array_access_suffix: "[" expr "]"
 
 // Primary expressions: the highest precedence atoms
-?primary: INT+
+?primary: INT
         | ID
         | array_literal
         | "(" expr ")"
@@ -98,7 +98,7 @@ LANG: "DK" | "EN"
 CASE: "camelCase" | "snake_case"
 
 // Literals & Terminals
-decimal: INT+"."INT+
+decimal: INT"."INT
 string: /"([^"\\]*(\\.[^"\\]*)*)"/   // Strings enclosed in "" with escapes
 BOOLEAN: "true" | "false"
 ID: /(?!(true|false|if|else|while|return|function|input|output|then|do)\b)[a-zæøå][a-zA-ZæøåÆØÅ0-9]*(?:_[a-zA-ZæøåÆØÅ0-9]+)*/
