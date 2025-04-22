@@ -14,10 +14,10 @@ start: syntax [COMMENT]* function_definition+ [NEWLINE]* [COMMENT]*
 syntax: "Language" LANG NEWLINE "Case" CASE NEWLINE
 
 // Function definition
-function_definition: "function" TYPE ID "(" [params] ")" block
+function_definition: "function" TYPE array_suffix? ID "(" [params] ")" block
 
 // Block definition
-block: "{" NEWLINE? stmt+ (NEWLINE stmt+)* NEWLINE? "}"
+block: "{" NEWLINE? stmt (NEWLINE stmt+)* NEWLINE? "}"
 
 
 // Statements
@@ -30,8 +30,9 @@ block: "{" NEWLINE? stmt+ (NEWLINE stmt+)* NEWLINE? "}"
      | input_stmt
      | expr_stmt
 
-assignment_stmt: ID "=" expr
-declaration_stmt: "new" TYPE ID ["=" expr]
+lvalue: ID array_access_suffix*
+assignment_stmt: lvalue "=" expr
+declaration_stmt: "new" TYPE ID array_suffix? ["=" expr]
 if_stmt: "if" expr "then" block ["else" block]
 while_stmt: "while" expr "do" block
 return_stmt: "return" expr
