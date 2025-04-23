@@ -47,13 +47,13 @@ expr_stmt: expr
 
 ?or_expr: and_expr ("or" and_expr)*
 
-?and_expr: not_expr ("and" not_expr)*
+?and_expr: equality_expr ("and" equality_expr)*
 
-?not_expr: "!" not_expr       -> negate
-         | comparison_expr
+?equality_expr: relational_expr (EQ_OP relational_expr)?
+EQ_OP: "==" | "!="
 
-?comparison_expr: add_expr (COMPARE_OP add_expr)?
-COMPARE_OP: "==" | "<" | ">" | "<=" | ">="
+?relational_expr: add_expr (REL_OP add_expr)?
+REL_OP: "<" | ">" | "<=" | ">="
 
 ?add_expr: mul_expr (ADD_OP mul_expr)*
 ADD_OP: "+" | "-"
@@ -62,6 +62,7 @@ ADD_OP: "+" | "-"
 MUL_OP: "*" | "/" | "%"
 
 ?unary_expr: UMINUS unary_expr   -> uminus
+           | "!" unary_expr      -> negate
            | postfix_expr
 UMINUS: "-"
 
