@@ -142,13 +142,24 @@ class Interpreter:
     ## Statements
 
     def visit_declaration_stmt(self, node):
-        if len(node.children) == 2:
+        childrenAmount = len(node.children)
+        if childrenAmount == 2:
             self.env.declare(node.children[1])
-        else:
-            self.env.define(node.children[1], self.visit(node.children[2]))
+        elif childrenAmount == 3:
+            if self.visit(node.children[2]):
+                self.env.declare(node.children[1], True)
+            else:
+                self.env.define(node.children[1], self.visit(node.children[2]))
 
     def visit_assignment_stmt(self, node):
-        self.env.set(node.children[0], self.visit(node.children[1]))
+        name = node.children[0].children[0]
+        value = node.children[1]
+        if len(node.children[0].children) == 1:
+            self.env.set(name, value)
+        else:
+            arrayIndex = self.visit(node.children[0].children[1])
+            self.env.set(name, value, [arrayIndex])
+
 
     def visit_if_stmt(self, node):
         if self.visit(node.children[0]):
@@ -166,7 +177,7 @@ class Interpreter:
         for child in node.children:
             self.visit(child)
 
-    ## Interactions
+    ## User Interactions
 
     def visit_output_stmt(self, node):
         print(self.visit(node.children[0]))
@@ -186,13 +197,26 @@ class Interpreter:
             self.env.define(f'{node.children[1]}_parameters', node.children[2])
 
     def visit_postfix_expr(self, node):
-        function_interpreter = Interpreter(self.env)
-        if len(node.children[1].children) > 0:
-            for i in range(0,len(node.children[1].children[0].children)):
-                parameter_name = self.env.get(node.children[0]+"_parameters").children[i].children[1].value
-                parameter_value = self.visit(node.children[1].children[0].children[i])
-                function_interpreter.env.define(parameter_name, parameter_value)
-        return self.visit(function_interpreter.visit(node.children[0]))
+        if node.children[-1].data == "call_suffix":
+            function_interpreter = Interpreter(self.env)
+            if len(node.children[1].children) > 0:
+                for i in range(0,len(node.children[1].children[0].children)):
+                    parameter_name = self.env.get(node.children[0]+"_parameters").children[i].children[1].value
+                    parameter_value = self.visit(node.children[1].children[0].children[i])
+                    function_interpreter.env.define(parameter_name, parameter_value)
+            return self.visit(function_interpreter.visit(node.children[0]))
+        elif node.children[-1].data == "array_access_suffix":
+            name = node.children[0]
+            arrayIndex = self.visit(node.children[1])
+            return self.env.get(name,[arrayIndex])
+
+    def visit_array_suffix(self, node):
+        return True
+
+    def visit_array_access_suffix(self, node):
+        index = self.visit(node.children[0])
+        return index
+
 
     ## Syntax
 

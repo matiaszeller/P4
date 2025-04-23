@@ -1,15 +1,10 @@
 Language EN
 Case camelCase
 
-function boolean addup(integer number, integer number2) {
-output "It worked"
-output number + number2
-}
-
-function boolean main () {
-output "main"
-new integer hej = 3
-new integer nej = 4
-output hej + nej
-addup(2, 4)
+function noType main () {
+new integer a[]
+a[5] = 1
+a[3] = 200
+output a[5]
+output a[4]
 }
