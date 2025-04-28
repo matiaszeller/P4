@@ -21,6 +21,7 @@ class Interpreter:
             return method(node)
         elif isinstance(node, Token):
             return self.visit_token(node)
+        return None
 
     ## Error handling
 
@@ -209,6 +210,7 @@ class Interpreter:
             name = node.children[0]
             arrayIndex = self.visit(node.children[1])
             return self.env.get(name,[arrayIndex])
+        return None
 
     def visit_array_suffix(self, node):
         return True
