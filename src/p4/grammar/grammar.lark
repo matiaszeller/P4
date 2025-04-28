@@ -3,92 +3,105 @@
 // common tokens
 %import common.NEWLINE
 %import common.WS_INLINE
+%import common.INT
 %ignore WS_INLINE
+%ignore COMMENT // For the syntax tree, can be removed if necessary
 
 // Start Rule
-start: syntax function_def+
+start: syntax [COMMENT]* function_definition+ [NEWLINE]* [COMMENT]*
 
 // Language and case parameters
 syntax: "Language" LANG NEWLINE "Case" CASE NEWLINE
 
 // Function definition
-function_def: "fn" type ID "(" [params] ")" block
+function_definition: "function" TYPE array_suffix? ID "(" [params] ")" block
 
 // Block definition
-block: "{" NEWLINE? stmt+ (NEWLINE stmt+)* NEWLINE? "}"
+block: "{" NEWLINE? stmt (NEWLINE stmt+)* NEWLINE? "}"
+
 
 // Statements
-?stmt: assignment_stmt ";"
-     | declaration
+?stmt: assignment_stmt
+     | declaration_stmt
      | if_stmt
      | while_stmt
-     | return_stmt ";"
-     | output_stmt ";"
-     | input_stmt ";"
-     | expr_stmt ";"
+     | return_stmt
+     | output_stmt
+     | input_stmt
+     | expr_stmt
 
-// Assignment
-assignment_stmt: ID "=" expr_logical
-
-// New keyword
-declaration: "new" type ID ";"
-           | "new" type ID "=" expr_logical ";"
-           | "new" type ID "[" expr_logical "]" ";"
-
-// If statement (bruger then keyword lige nu)
-if_stmt: "if" expr_logical "then" block "else" block
-
-// While statement
-while_stmt: "while" expr_logical "do" block
-
-// Return statement
-return_stmt: "return" expr_logical
-
-// Output statement
-output_stmt: "output" expr_logical
-
-// Input statement
+lvalue: ID array_access_suffix*
+assignment_stmt: lvalue "=" expr
+declaration_stmt: "new" TYPE ID array_suffix? ["=" expr]
+if_stmt: "if" expr "then" block ["else" block]
+while_stmt: "while" expr "do" block
+return_stmt: "return" expr
+output_stmt: "output" expr
 input_stmt: "input"
+expr_stmt: expr
 
-// Expression statement
-expr_stmt: expr_logical
 
-// Expressions
-?expr_logical: expr_not (("and" | "or") expr_not)*
-?expr_not: "!" expr_comparison           -> not_expr
-         | expr_comparison
-?expr_comparison: expr_plus (("<" | ">" | "==") expr_plus)?
-?expr_plus: expr_mult (("+" | "-") expr_mult)*
-?expr_mult: expr_negative (("*" | "/" | "%") expr_negative)*
-?expr_negative: "-" expr_func             -> neg
-              | expr_func
-?expr_func: ID "(" [arglist] ")"          -> func_call
-          | expr_array
-?expr_array: expr_term
-           | ID "[" expr_term "]"         -> array_access
-?expr_term: ID
-          | INT
-          | DOUBLE
-          | BOOL
-          | STRING
-          | "(" expr_logical ")"
+// Expression Rules with explicit operator tokens
 
-// Function call arguments.
-arglist: expr_not ("," expr_not)*
+?expr: or_expr  // Start with lowest precedence
+
+?or_expr: and_expr ("or" and_expr)*
+
+?and_expr: equality_expr ("and" equality_expr)*
+
+?equality_expr: relational_expr (EQ_OP relational_expr)?
+EQ_OP: "==" | "!="
+
+?relational_expr: add_expr (REL_OP add_expr)?
+REL_OP: "<" | ">" | "<=" | ">="
+
+?add_expr: mul_expr (ADD_OP mul_expr)*
+ADD_OP: "+" | "-"
+
+?mul_expr: unary_expr (MUL_OP unary_expr)*
+MUL_OP: "*" | "/" | "%"
+
+?unary_expr: UMINUS unary_expr   -> uminus
+           | "!" unary_expr      -> negate
+           | postfix_expr
+UMINUS: "-"
+
+?postfix_expr: primary ( call_suffix | array_access_suffix )* | primary
+
+// Postfix operations applied to a primary expression
+call_suffix: "(" [arguments] ")"
+array_access_suffix: "[" expr "]"
+
+// Primary expressions: the highest precedence atoms
+?primary: INT
+        | ID
+        | array_literal
+        | "(" expr ")"
+        | decimal
+        | string
+        | BOOLEAN
+
+arguments: expr ("," expr)*
+
+// Array literal definition
+array_literal: "[" [array_elements] "]"
+array_elements: expr ("," expr)*
 
 // Parameters in function definitions
-params: type ID ("," type ID)*
+params: param ("," param)*
+param: TYPE ID array_suffix?
+array_suffix: "[" "]"
 
 // Types
-type: "boolean" | "integer" | "decimal" | "string" | "noType"
+TYPE: "boolean" | "integer" | "decimal" | "string" | "noType"
 
 // Keywords for language and case style
 LANG: "DK" | "EN"
 CASE: "camelCase" | "snake_case"
 
-// Literals
-BOOL: "true" | "false"
-ID: /[a-z][a-zA-Z0-9]*(?:_[a-z][a-zA-Z0-9]*)*/
-INT: /[0-9]+/
-DOUBLE: /[0-9]+\.[0-9]+/
-STRING: /"([^"\\]*(\\.[^"\\]*)*)"/
+// Literals & Terminals
+decimal: INT"."INT
+string: /"([^"\\]*(\\.[^"\\]*)*)"/   // Strings enclosed in "" with escapes
+BOOLEAN: "true" | "false"
+ID: /(?!(true|false|if|else|while|return|function|input|output|then|do)\b)[a-zæøå][a-zA-ZæøåÆØÅ0-9]*(?:_[a-zA-ZæøåÆØÅ0-9]+)*/
+COMMENT: /(?:\n)?#[\s\S]*?#/ // Matches comments enclosed in # #

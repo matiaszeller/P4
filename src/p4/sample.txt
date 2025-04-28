@@ -1,11 +1,6 @@
-Language DK
+Language EN
 Case camelCase
-fn integer myFunc(integer x, integer y) {
-    new integer z = x + y;
-    new integer arr[10];
-    if z > 10 then {
-        output z;
-    } else {
-        output 0;
-    }
+function integer main (){
+    new integer number = (1 + (2 + 3)) + 4
+    return number
 }
