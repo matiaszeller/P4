@@ -32,7 +32,7 @@ block: "{" NEWLINE? stmt (NEWLINE stmt+)* NEWLINE? "}"
 
 lvalue: ID array_access_suffix*
 assignment_stmt: lvalue "=" expr
-declaration_stmt: "new" TYPE ID array_suffix? ["=" expr]
+declaration_stmt: "new" TYPE ID array_suffix* ["=" expr]
 if_stmt: "if" expr "then" block ["else" block]
 while_stmt: "while" expr "do" block
 return_stmt: "return" expr

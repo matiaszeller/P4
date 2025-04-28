@@ -2,9 +2,9 @@ Language EN
 Case camelCase
 
 function noType main () {
-new integer a[]
-a[5] = 1
-a[3] = 200
-output a[5]
-output a[4]
+new integer a[][]
+a[0][0] = 1
+a[1][1] = 3
+a[1][0] = 2
+output a[1][0]
 }
