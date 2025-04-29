@@ -1,10 +1,10 @@
 Language EN
 Case camelCase
 
+function noType nomain(boolean val1, boolean val2){
+output val1 and val2
+}
+
 function noType main () {
-new integer a[][]
-a[0][0] = 1
-a[1][1] = 3
-a[1][0] = 2
-output a[1][0]
+nomain(true, true)
 }

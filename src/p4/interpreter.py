@@ -31,7 +31,8 @@ class Interpreter:
     def isBoolean(self, bool):
         if bool in (True, False, "true", "false"):
             return True
-        raise Exception(f'{bool} is neither true nor false.')
+        else:
+            raise Exception(f'{bool} is neither true nor false.')
 
     ## Start
 
@@ -74,6 +75,8 @@ class Interpreter:
         boolean = self.visit(node.children[0])
         if self.isBoolean(boolean):
             return not bool(boolean)
+        else:
+            raise Exception(f'{boolean} is not a valid boolean value.')
 
     def visit_expr_stmt(self, node):
         return self.visit(node.children[0])
@@ -161,7 +164,6 @@ class Interpreter:
     ## Statements
 
     def visit_declaration_stmt(self, node):
-        self.isArray(node)
         name = node.children[1]
         children_amount = len(node.children)
         if children_amount == 2:
@@ -186,14 +188,19 @@ class Interpreter:
 
 
     def visit_if_stmt(self, node):
-        if self.visit(node.children[0]):
-            self.visit(node.children[1])
+        condition = node.children[0]
+        then_block = node.children[1]
+        if self.visit(condition):
+            self.visit(then_block)
         elif len(node.children) == 3:
-            self.visit(node.children[2])
+            else_block = node.children[2]
+            self.visit(else_block)
 
     def visit_while_stmt(self, node):
-        while self.visit(node.children[0]):
-            self.visit(node.children[1])
+        condition = node.children[0]
+        block = node.children[1]
+        while self.visit(condition):
+            self.visit(block)
 
     ## Block
 
@@ -212,25 +219,30 @@ class Interpreter:
     ## Functions & Arrays
 
     def visit_function_definition(self, node):
-        if node.children[1] == "main":
-            self.visit(node.children[2])
-        elif len(node.children) == 3:
-            self.env.define(node.children[1], node.children[2])
+        name = node.children[1]
+        block = node.children[-1]
+        if name == "main":
+            self.visit(block)
         else:
-            self.env.define(node.children[1], node.children[3])
-            self.env.define(f'{node.children[1]}_parameters', node.children[2])
+            self.env.define(name, block)
+        if len(node.children) == 4:
+            parameters = node.children[2]
+            self.env.define(f'{name}_parameters', parameters)
 
     def visit_postfix_expr(self, node):
-        if node.children[-1].data == "call_suffix":
+        name = node.children[0]
+        suffix = node.children[-1]
+        if suffix.data == "call_suffix":
+            parameters = suffix.children[0]
+            parameter_count = len(parameters.children)
             function_interpreter = Interpreter(self.env)
-            if len(node.children[1].children) > 0:
-                for i in range(0,len(node.children[1].children[0].children)):
-                    parameter_name = self.env.get(node.children[0]+"_parameters").children[i].children[1].value
-                    parameter_value = self.visit(node.children[1].children[0].children[i])
+            if parameter_count > 0:
+                for i in range(parameter_count):
+                    parameter_name = self.env.get(name+"_parameters").children[i].children[1].value
+                    parameter_value = self.visit(parameters.children[i])
                     function_interpreter.env.define(parameter_name, parameter_value)
-            return self.visit(function_interpreter.visit(node.children[0]))
-        elif node.children[-1].data == "array_access_suffix":
-            name = node.children[0]
+            return self.visit(function_interpreter.visit(name))
+        elif suffix.data == "array_access_suffix":
             indices = len(node.children)-1
             array_index = [None]*indices
             for i in range(indices):
