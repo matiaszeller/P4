@@ -3,8 +3,8 @@ from lark import Tree, Token
 from environment import Environment
 
 class Interpreter:
-    def __init__(self, old_environment):
-        if old_environment == 0:
+    def __init__(self, old_environment=None):
+        if old_environment is None:
             self.env = Environment()
         else:
             self.env = old_environment
@@ -21,6 +21,7 @@ class Interpreter:
             return method(node)
         elif isinstance(node, Token):
             return self.visit_token(node)
+        return None
 
     ## Error handling
 
@@ -28,9 +29,10 @@ class Interpreter:
         raise Exception(f'visit_{node.data} is not implemented.')
 
     def isBoolean(self, bool):
-        if bool == True or bool == False:
+        if bool in (True, False, "true", "false"):
             return True
-        raise Exception(f'{bool} is neither true nor false.')
+        else:
+            raise Exception(f'{bool} is neither true nor false.')
 
     ## Start
 
@@ -62,13 +64,19 @@ class Interpreter:
         return float(f"{number}.{fraction}")
 
     def visit_string(self, node):
-        return node.children[0]
+        string = node.children[0]
+        return string
 
     def visit_uminus(self, node):
-        return -float(self.visit(node.children[0]))
+        value = self.visit(node.children[1])
+        return -(value)
 
     def visit_negate(self, node):
-        return not bool(self.visit(node.children[0]))
+        boolean = self.visit(node.children[0])
+        if self.isBoolean(boolean):
+            return not bool(boolean)
+        else:
+            raise Exception(f'{boolean} is not a valid boolean value.')
 
     def visit_expr_stmt(self, node):
         return self.visit(node.children[0])
@@ -79,86 +87,120 @@ class Interpreter:
         result = self.visit(node.children[0])
 
         for i in range(1, len(node.children), 2):
-            op = node.children[i]
-            value = self.visit(node.children[i +1])
+            operator = node.children[i]
+            operand = self.visit(node.children[i +1])
 
-            if op == "+":
-                result += value
-            elif op == "-":
-                result -= value
+            if operator == "+":
+                result += operand
+            elif operator == "-":
+                result -= operand
             else:
-                raise Exception(f'Unsupported operator: {op}')
+                raise Exception(f'Unsupported operator: {operator}')
         return result
 
     def visit_mul_expr(self, node):
         result = self.visit(node.children[0])
 
         for i in range(1, len(node.children), 2):
-            op = node.children[i]
-            value = self.visit(node.children[i+1])
+            operator = node.children[i]
+            operand = self.visit(node.children[i+1])
 
-            if op == "*":
-                result *= value
-            elif op == "/":
-                result /= value
-            elif op == "%":
-                result %= value
+            if operator == "*":
+                result *= operand
+            elif operator == "/":
+                result /= operand
+            elif operator == "%":
+                result %= operand
             else:
-                raise Exception(f'Unsupported operator: {op}')
+                raise Exception(f'Unsupported operator: {operator}')
         return result
 
-    def visit_comparison_expr(self, node):
+    def visit_equality_expr(self, node):
         value1 = self.visit(node.children[0])
         value2 = self.visit(node.children[2])
-        op = node.children[1]
+        operator = node.children[1]
 
-        if op == "==":
+        if operator == "==":
             return value1 == value2
-        elif op == "<":
+        elif operator == "!=":
+            return value1 != value2
+        else:
+            raise Exception(f'Unsupported operator: {operator}')
+
+    def visit_relational_expr(self, node):
+        value1 = self.visit(node.children[0])
+        value2 = self.visit(node.children[2])
+        operator = node.children[1]
+
+        if operator == "<":
             return value1 < value2
-        elif op == ">":
+        elif operator == ">":
             return value1 > value2
-        elif op == "<=":
+        elif operator == "<=":
             return value1 <= value2
-        elif op == ">=":
+        elif operator == ">=":
             return value1 >= value2
         else:
-            raise Exception(f'Unsupported operator: {op}')
+            raise Exception(f'Unsupported operator: {operator}')
 
     def visit_and_expr(self, node):
         result = self.visit(node.children[0])
         self.isBoolean(result)
         for i in range(1, len(node.children)):
-            result = result and self.visit(node.children[i])
+            boolean = self.visit(node.children[i])
+            self.isBoolean(boolean)
+            result = result and boolean
         return result
 
     def visit_or_expr(self, node):
         result = self.visit(node.children[0])
         self.isBoolean(result)
         for i in range(1, len(node.children)):
-            result = result or self.visit(node.children[i])
+            boolean = self.visit(node.children[i])
+            self.isBoolean(boolean)
+            result = result or boolean
         return result
 
     ## Statements
 
     def visit_declaration_stmt(self, node):
-        if len(node.children) == 2:
-            self.env.declare(node.children[1])
+        name = node.children[1]
+        children_amount = len(node.children)
+        if children_amount == 2:
+            self.env.declare(name)
+        elif self.isArray(node):
+            array_depth = len(node.children) - 2
+            self.env.declare(node.children[1], array_depth)
         else:
             self.env.define(node.children[1], self.visit(node.children[2]))
 
     def visit_assignment_stmt(self, node):
-        self.env.set(node.children[0], self.visit(node.children[1]))
+        name = node.children[0].children[0]
+        value = self.visit(node.children[1])
+        array_depth = len(node.children[0].children)-1
+        if array_depth == 0:
+            self.env.set(name, value)
+        else:
+            index_list = [None]*array_depth
+            for i in range(array_depth):
+                index_list[i] = self.visit(node.children[0].children[i+1])
+            self.env.set(name, value, index_list)
+
 
     def visit_if_stmt(self, node):
-        if self.visit(node.children[0]):
-            self.visit(node.children[1])
+        condition = node.children[0]
+        then_block = node.children[1]
+        if self.visit(condition):
+            self.visit(then_block)
         elif len(node.children) == 3:
-            self.visit(node.children[2])
+            else_block = node.children[2]
+            self.visit(else_block)
 
     def visit_while_stmt(self, node):
-        while self.visit(node.children[0]):
-            self.visit(node.children[1])
+        condition = node.children[0]
+        block = node.children[1]
+        while self.visit(condition):
+            self.visit(block)
 
     ## Block
 
@@ -166,7 +208,7 @@ class Interpreter:
         for child in node.children:
             self.visit(child)
 
-    ## Interactions
+    ## User Interactions
 
     def visit_output_stmt(self, node):
         print(self.visit(node.children[0]))
@@ -177,22 +219,55 @@ class Interpreter:
     ## Functions & Arrays
 
     def visit_function_definition(self, node):
-        if node.children[1] == "main":
-            self.visit(node.children[2])
-        elif len(node.children) == 3:
-            self.env.define(node.children[1], node.children[2])
+        name = node.children[1]
+        block = node.children[-1]
+        if name == "main":
+            self.visit(block)
         else:
-            self.env.define(node.children[1], node.children[3])
-            self.env.define(f'{node.children[1]}_parameters', node.children[2])
+            self.env.define(name, block)
+        if len(node.children) == 4:
+            parameters = node.children[2]
+            self.env.define(f'{name}_parameters', parameters)
 
     def visit_postfix_expr(self, node):
-        function_interpreter = Interpreter(self.env)
-        if len(node.children[1].children) > 0:
-            for i in range(0,len(node.children[1].children[0].children)):
-                parameter_name = self.env.get(node.children[0]+"_parameters").children[i].children[1].value
-                parameter_value = self.visit(node.children[1].children[0].children[i])
-                function_interpreter.env.define(parameter_name, parameter_value)
-        return self.visit(function_interpreter.visit(node.children[0]))
+        name = node.children[0]
+        suffix = node.children[-1]
+        if suffix.data == "call_suffix":
+            parameters = suffix.children[0]
+            parameter_count = len(parameters.children)
+            function_interpreter = Interpreter(self.env)
+            if parameter_count > 0:
+                for i in range(parameter_count):
+                    parameter_name = self.env.get(name+"_parameters").children[i].children[1].value
+                    parameter_value = self.visit(parameters.children[i])
+                    function_interpreter.env.define(parameter_name, parameter_value)
+            return self.visit(function_interpreter.visit(name))
+        elif suffix.data == "array_access_suffix":
+            indices = len(node.children)-1
+            array_index = [None]*indices
+            for i in range(indices):
+                array_index[i] = self.visit(node.children[i+1])
+            return self.env.get(name,array_index)
+        return None
+
+    def visit_array_suffix(self, node):
+        return True
+
+    def visit_array_access_suffix(self, node):
+        index = self.visit(node.children[0])
+        return index
+
+    def isArray(self, node):
+        try:
+            if node.children[2].data == "array_suffix":
+                return True
+            else:
+                return False
+        except:
+            return False
+
+    def visit_return_stmt(self, node):
+        return self.visit(node.children[0])
 
     ## Syntax
 
