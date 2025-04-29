@@ -266,6 +266,9 @@ class Interpreter:
         except:
             return False
 
+    def visit_return_stmt(self, node):
+        return self.visit(node.children[0])
+
     ## Syntax
 
     def visit_syntax(self, node):

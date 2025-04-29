@@ -1,10 +1,6 @@
 Language EN
 Case camelCase
-
-function noType nomain(boolean val1, boolean val2){
-output val1 and val2
-}
-
-function noType main () {
-nomain(true, true)
+function integer main (){
+    new integer number = (1 + (2 + 3)) + 4
+    output number
 }

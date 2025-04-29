@@ -1,4 +1,5 @@
 from lark import Lark, Transformer
+from lark.tree import pydot__tree_to_png
 
 from src.p4.interpreter import Interpreter
 
@@ -32,6 +33,8 @@ def main():
         print("Transformed Tree:")
         print(transformed_tree)
         print('\n')
+        print(tree)
+        pydot__tree_to_png(tree, "tree.png") #YOU NEED pydot AND graphviz for this step
     except Exception as e:
         print("Parsing error:", e)
 
