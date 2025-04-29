@@ -2,5 +2,5 @@ Language EN
 Case camelCase
 function integer main (){
     new integer number = (1 + (2 + 3)) + 4
-    return number
+    output number
 }
