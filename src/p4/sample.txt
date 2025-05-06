@@ -1,6 +1,8 @@
 Language EN
 Case camelCase
 function integer main (){
-    new integer number = (1 + (2 + 3)) + 4
-    output number
+    while x < 4 do {
+        x = 2 + 2
+        return x
+    }
 }
