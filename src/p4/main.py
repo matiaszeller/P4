@@ -1,45 +1,44 @@
-from lark import Lark, Transformer
+import sys
 from lark.tree import pydot__tree_to_png
-
+from semantics_checker import SemanticsChecker
 from src.p4.interpreter import Interpreter
+from src.p4.rolex_parser import extract_header, make_parser
 
-# Load grammar
-with open("grammar/grammar.lark", "r") as grammar_file:
-    grammar = grammar_file.read()
-
-# Lark parser
-parser = Lark(grammar, parser='earley', start='start', lexer='dynamic')
-
-# Optional transformer to process the parse tree.
-class MyTransformer(Transformer):
-    def start(self, items):
-        return items
-
-# parse and transformed tree showing tokens
 def main():
+    source_file = sys.argv[1] if len(sys.argv) > 1 else "sample.txt"
+
     try:
-        # open test source
-        with open("sample.txt", "r") as src_file:
+        with open(source_file, "r") as src_file:
             sample_input = src_file.read()
     except FileNotFoundError:
-        print("Error reading file")
+        print(f"Error reading file: {source_file}")
         return
 
     try:
+        lang, _ = extract_header(sample_input)
+        parser = make_parser(lang)
         tree = parser.parse(sample_input)
-        transformed_tree = MyTransformer().transform(tree)
         print("Parse Tree:")
         print(tree.pretty())
-        print("Transformed Tree:")
-        print(transformed_tree)
-        print('\n')
         print(tree)
-        pydot__tree_to_png(tree, "tree.png") #YOU NEED pydot AND graphviz for this step
+        # Uncomment to update tree.png (need to install requirements.txt and graphviz from https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/12.2.1/windows_10_cmake_Release_graphviz-install-12.2.1-win64.exe)
+        # pydot__tree_to_png(tree, "tree.png")
     except Exception as e:
         print("Parsing error:", e)
+        return
 
-    interpreter = Interpreter()
-    interpreter.visit(tree)
+    try:
+        SemanticsChecker().run(tree)
+        print("Semantics checker passed")
+    except Exception as e:
+        print("Semantical analysis failed:", e)
+        return
+
+    try:
+        interpreter = Interpreter()
+        interpreter.visit(tree)
+    except Exception as e:
+        print("Interpreter error:", e)
 
 if __name__ == "__main__":
     main()
