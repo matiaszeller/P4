@@ -19,7 +19,7 @@ class MyTransformer(Transformer):
 def main():
     try:
         # open test source
-        with open("sample.txt", "r") as src_file:
+        with open("sample2.txt", "r") as src_file:
             sample_input = src_file.read()
     except FileNotFoundError:
         print("Error reading file")
@@ -34,7 +34,7 @@ def main():
         print(transformed_tree)
         print('\n')
         print(tree)
-        pydot__tree_to_png(tree, "tree.png") #YOU NEED pydot AND graphviz for this step
+        #pydot__tree_to_png(tree, "tree.png") #YOU NEED pydot AND graphviz for this step
     except Exception as e:
         print("Parsing error:", e)
 

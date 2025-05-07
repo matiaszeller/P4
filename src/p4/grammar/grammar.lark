@@ -8,7 +8,7 @@
 %ignore COMMENT // For the syntax tree, can be removed if necessary
 
 // Start Rule
-start: syntax (COMMENT)* function_definition (NEWLINE)* (COMMENT)* function_definition*
+start: syntax (COMMENT)* function_definition ((NEWLINE)* (COMMENT)* function_definition)*
 
 // Language and case parameters
 syntax: "Language" LANG NEWLINE "Case" CASE NEWLINE
@@ -31,8 +31,8 @@ block: "{" NEWLINE? stmt (NEWLINE stmt+)* NEWLINE? "}"
      | expr_stmt
 
 lvalue: ID array_access_suffix*
-assignment_stmt: lvalue "=" expr
-declaration_stmt: "new" TYPE ID array_suffix* ["=" expr]
+assignment_stmt: lvalue "=" (expr | input_stmt)
+declaration_stmt: "new" TYPE ID array_suffix* ["=" (expr | input_stmt)]
 if_stmt: "if" expr "then" block ["else" block]
 while_stmt: "while" expr "do" block
 return_stmt: "return" expr

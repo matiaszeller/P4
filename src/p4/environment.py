@@ -2,23 +2,16 @@ class Environment:
     def __init__(self):
         self.variables = {}
 
-    def declare(self, name, array_depth=0):
+    def declare(self, name, type, array_depth=0):
         if name in self.variables:
             raise NameError(f'Variable {name} already exists')
         self.variables[name] = {
             'value': None,
+            'type': type,
             'arrayDepth': array_depth
         }
         for _ in range(array_depth):
             self.variables[name]['value'] = [self.variables[name]['value']]
-
-    def define(self, name, value):
-        if name in self.variables:
-            raise NameError(f'Variable {name} already exists')
-        self.variables[name] = {
-            'value': value,
-            'arrayDepth': 0
-        }
 
     def get(self, name, array_index=None):
         if name not in self.variables:
@@ -48,19 +41,17 @@ class Environment:
                 raise ValueError(f'Variable {name} requires {dimensions} indices, got 0')
             else:
                 variable_data['value'] = value
+        elif array_index == -1:
+            variable_data['value'] = value
         else:
             if len(array_index) != dimensions:
                 raise ValueError(f'Variable {name} requires {dimensions} indices, got {len(array_index)}')
 
-        for i in array_index[:-1]:
-            while i >= len(target):
-                target.append([])
-            target = target[i]
+            for i in array_index[:-1]:
+                while i >= len(target):
+                    target.append([])
+                target = target[i]
 
-        while array_index[-1] >= len(target):
-            target.append(None)
-        target[array_index[-1]] = value
-
-    def print_variables(self):
-        for name, value in self.variables.items():
-            print(f'{name} = {value}')
+            while array_index[-1] >= len(target):
+                target.append(None)
+            target[array_index[-1]]  = value
