@@ -2,7 +2,7 @@ import sys
 from lark.tree import pydot__tree_to_png
 from semantics_checker import SemanticsChecker
 from src.p4.interpreter import Interpreter
-from src.p4.rolex_parser import extract_header, make_parser
+from src.p4.parser import extract_header, make_parser
 
 def main():
     source_file = sys.argv[1] if len(sys.argv) > 1 else "sample.txt"

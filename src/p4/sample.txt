@@ -1,19 +1,10 @@
 Language EN
 Case camelCase
 
-function integer add (integer a, integer b) {
-    new integer sum = a + b
-    return sum
-}
-
 function integer main () {
-    new integer numberCool = 1 + (2 + 3)
-    output numberCool
-
     new integer e = 1
-    new integer f = 2
-    new integer g = add(e, f)
-    output g
+    new decimal t = 2.5 + e
+    output t
 
     return 0
 }
