@@ -4,12 +4,11 @@
 %ignore WS_INLINE
 %ignore COMMENT
 
-// Program structure
 start: syntax (COMMENT)* function_definition (NEWLINE)* (COMMENT)* function_definition*
 
 syntax: "Language" LANG NEWLINE "Case" CASE NEWLINE
 
-function_definition: FUNCTION TYPE array_suffix? ID "(" [params] ")" block
+function_definition: _FUNCTION TYPE array_suffix? ID "(" [params] ")" block
 
 block: "{" NEWLINE? stmt (NEWLINE stmt+)* NEWLINE? "}"
 
@@ -21,18 +20,16 @@ block: "{" NEWLINE? stmt (NEWLINE stmt+)* NEWLINE? "}"
      | output_stmt
      | expr_stmt
 
-// Statements
 lvalue: ID array_access_suffix*
 assignment_stmt: lvalue "=" expr
-declaration_stmt: NEW TYPE ID array_suffix* ["=" expr]
-if_stmt: IF expr THEN block [ELSE block]
-while_stmt: WHILE expr DO block
-return_stmt: RETURN expr
-output_stmt: OUTPUT expr
+declaration_stmt: _NEW TYPE ID array_suffix* ["=" expr]
+if_stmt: _IF expr _THEN block [_ELSE block]
+while_stmt: _WHILE expr _DO block
+return_stmt: _RETURN expr
+output_stmt: _OUTPUT expr
 expr_stmt: expr
 
-// Expressions
-input_expr: INPUT
+input_expr: _INPUT
 ?expr: or_expr
 ?or_expr: and_expr ("or" and_expr)*
 ?and_expr: equality_expr ("and" equality_expr)*
@@ -51,17 +48,15 @@ UMINUS: "-"
 ?postfix_expr: primary ( call_suffix | array_access_suffix )* | primary
 call_suffix: "(" [arguments] ")"
 array_access_suffix: "[" expr "]"
-?primary: INT | ID | array_literal | "(" expr ")" | decimal | string | BOOLEAN
+?primary: INT | ID | array_literal | "(" expr ")" | decimal | string | BOOLEAN | input_expr
 arguments: expr ("," expr)*
 
-// Arrays / Parameters
 array_literal: "[" [array_elements] "]"
 array_elements: expr ("," expr)*
 params: param ("," param)*
 param: TYPE ID array_suffix?
 array_suffix: "[" "]"
 
-// Atoms
 TYPE: "boolean" | "integer" | "decimal" | "string" | "noType"
 LANG: "DK" | "EN"
 CASE: "camelCase" | "snake_case"
@@ -69,4 +64,4 @@ decimal: INT"."INT
 string: /"([^"\\]*(\\.[^"\\]*)*)"/
 BOOLEAN: "true" | "false"
 ID: /(?!(true|false|if|else|while|return|function|input|output|then|do)\b)[a-zæøå][a-zA-ZæøåÆØÅ0-9]*(?:_[a-zA-ZæøåÆØÅ0-9]+)*/
-COMMENT: /(?:\n)?#[\s\S]*?#/ // Matches comments enclosed in # #
+COMMENT: /(?:\n)?#[\s\S]*?#/
