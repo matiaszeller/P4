@@ -1,8 +1,14 @@
 Language EN
 Case camelCase
 
+function noType add(integer a, integer b) {
+    output a + b
+    output 2+2
+}
+
+
 function noType main() {
-    new integer a[][]
-    a = [[2,1], [4,5]]
+    new integer a = 10
+    add(a, 2)
     output a
 }
