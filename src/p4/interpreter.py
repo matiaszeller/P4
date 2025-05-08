@@ -1,5 +1,3 @@
-from operator import contains
-
 from lark import Tree, Token
 from environment import Environment
 import ast
@@ -7,8 +5,6 @@ import ast
 class Interpreter:
     def __init__(self):
         self.env = Environment()
-
-
 
     #Recursive logic for visits
     def visit(self, node):
@@ -22,26 +18,23 @@ class Interpreter:
         return None
 
     ## Error handling
-
     def bad_visit(self, node):
         raise Exception(f'visit_{node.data} is not implemented.')
 
-
-    def isBoolean(self, bool):
-        if bool in (True, False, "true", "false") and bool not in (0,1):
-            return True
-        else:
-            raise Exception(f'{bool} is neither true nor false.')
-
-    ## Start
-
+    ## Start and Block
     def visit_start(self, node):
         for child in node.children:
             self.visit(child)
 
-    ## Unary Expressions
+    def visit_block(self, node):
+        for child in node.children:
+            result = self.visit(child)
+            if result is not None:
+                return result
 
+    ## Terminals
     def visit_token(self, node):
+        print(node.type)
         if node.type == "INT":
             return int(node)
         elif node.type == "ID":
@@ -66,22 +59,16 @@ class Interpreter:
         string = ast.literal_eval(node.children[0])
         return string
 
+    #Unary expressions
     def visit_uminus(self, node):
         value = self.visit(node.children[1])
-        return -(value)
+        return -value
 
     def visit_negate(self, node):
         boolean = self.visit(node.children[0])
-        if self.isBoolean(boolean):
-            return not bool(boolean)
-        else:
-            raise Exception(f'{boolean} is not a valid boolean value.')
-
-    def visit_expr_stmt(self, node):
-        return self.visit(node.children[0])
+        return not bool(boolean)
 
     ## Binary Expressions
-
     def visit_add_expr(self, node):
         result = self.visit(node.children[0])
 
@@ -94,8 +81,7 @@ class Interpreter:
             elif operator == "-":
                 result -= operand
             else:
-                raise Exception(f'Unsupported operator: {operator}')
-
+                raise Exception(f'Unsupported operator: {operator}. Expected + or -.')
         return result
 
     def visit_mul_expr(self, node):
@@ -112,7 +98,7 @@ class Interpreter:
             elif operator == "%":
                 result %= operand
             else:
-                raise Exception(f'Unsupported operator: {operator}')
+                raise Exception(f'Unsupported operator: {operator}, expected *, /, or %.')
         return result
 
     def visit_equality_expr(self, node):
@@ -125,7 +111,7 @@ class Interpreter:
         elif operator == "!=":
             return value1 != value2
         else:
-            raise Exception(f'Unsupported operator: {operator}')
+            raise Exception(f'Unsupported operator: {operator}, expected == or !=.')
 
     def visit_relational_expr(self, node):
         value1 = self.visit(node.children[0])
@@ -141,27 +127,25 @@ class Interpreter:
         elif operator == ">=":
             return value1 >= value2
         else:
-            raise Exception(f'Unsupported operator: {operator}')
+            raise Exception(f'Unsupported operator: {operator}, expected <, >, <=, or >=.')
 
     def visit_and_expr(self, node):
         result = self.visit(node.children[0])
-        self.isBoolean(result)
         for i in range(1, len(node.children)):
             boolean = self.visit(node.children[i])
-            self.isBoolean(boolean)
             result = result and boolean
         return result
 
     def visit_or_expr(self, node):
         result = self.visit(node.children[0])
-        self.isBoolean(result)
         for i in range(1, len(node.children)):
             boolean = self.visit(node.children[i])
-            self.isBoolean(boolean)
             result = result or boolean
         return result
 
     ## Statements
+    def visit_expr_stmt(self, node):
+        return self.visit(node.children[0])
 
     def visit_declaration_stmt(self, node):
         name = node.children[1]
@@ -170,7 +154,7 @@ class Interpreter:
         if children_amount == 2: #Contains only name and type
             self.env.declare_variable(name,type)
         elif self.isArray(node):
-            if self.hasValue(node.children[-1]): #Contains initial value for array
+            if self.hasValue(node.children[-2]): #Contains initial value for array
                 array_depth = len(node.children) - 3 #name, type and value children are discounted
                 array_values = self.visit(node.children[-1])
                 if not isinstance(array_values, list):
@@ -213,16 +197,10 @@ class Interpreter:
         while self.visit(condition):
             self.visit(block)
 
-    ## Block
-
-    def visit_block(self, node):
-        for child in node.children:
-            result = self.visit(child)
-            if result is not None:
-                return result
+    def visit_return_stmt(self, node):
+        return self.visit(node.children[0])
 
     ## User Interactions
-
     def visit_output_stmt(self, node):
         print(self.visit(node.children[0]))
 
@@ -230,7 +208,6 @@ class Interpreter:
         return input()
 
     ## Functions & Arrays
-
     def visit_function_definition(self, node):
         name = node.children[1]
         type = node.children[0]
@@ -282,25 +259,23 @@ class Interpreter:
             list_values.append(self.visit(child))
         return list_values
 
+    ## Syntax
+    def visit_syntax(self, node):
+        print(f'You are programming in {node.children[0]} using {node.children[2]}\n')
+
+    ## Helper Functions
+    def hasValue(self, node):
+        print(node.data)
+        if node.data == "array_suffix":
+            return True
+        else:
+            return False
+
     def isArray(self, node):
         try:
             if node.children[2].data == "array_suffix":
                 return True
             else:
                 return False
-        except:
+        except IndexError and AttributeError:
             return False
-
-    def hasValue(self, node):
-        if node.data == "array_suffix":
-            return False
-        else:
-            return True
-
-    def visit_return_stmt(self, node):
-        return self.visit(node.children[0])
-
-    ## Syntax
-
-    def visit_syntax(self, node):
-        print(f'Youre programming in {node.children[0]} using {node.children[2]}\n')

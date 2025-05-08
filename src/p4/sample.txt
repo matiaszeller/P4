@@ -8,7 +8,5 @@ function noType add(integer a, integer b) {
 
 
 function noType main() {
-    new integer a = 10
-    add(a, 2)
-    output a
+    new integer a[][][] = [[10]]
 }
