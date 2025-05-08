@@ -1,18 +1,8 @@
 Language EN
 Case camelCase
 
-function integer sumTwo(integer a, integer b) {
-    return a + b
-}
-
-function integer compute() {
-    new integer tal
-    tal = 5
-    new integer nummer
-    nummer = 10
-    sumTwo(tal, nummer)
-}
-
 function noType main() {
-    output compute()
+    new integer a[][]
+    a = [[2,1], [4,5]]
+    output a
 }

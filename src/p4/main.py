@@ -19,7 +19,7 @@ class MyTransformer(Transformer):
 def main():
     try:
         # open test source
-        with open("sample2.txt", "r") as src_file:
+        with open("sample.txt", "r") as src_file:
             sample_input = src_file.read()
     except FileNotFoundError:
         print("Error reading file")

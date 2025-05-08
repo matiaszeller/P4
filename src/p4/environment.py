@@ -36,6 +36,8 @@ class Environment:
         target = variable_data['value']
         dimensions = variable_data['arrayDepth']
 
+
+
         if array_index is None:
             if dimensions != 0:
                 raise ValueError(f'Variable {name} requires {dimensions} indices, got 0')
@@ -55,3 +57,12 @@ class Environment:
             while array_index[-1] >= len(target):
                 target.append(None)
             target[array_index[-1]]  = value
+
+    def _get_dimensions(self, value):
+        depth = 0
+        while isinstance(value, list):
+            if not value:
+                return depth
+            depth += 1
+            value = value[0]
+        return depth
