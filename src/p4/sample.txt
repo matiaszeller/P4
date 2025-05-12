@@ -1,8 +1,10 @@
 Language EN
 Case camelCase
 
-function noType main() {
-    new integer a[][]
-    a = [[2,1], [4,5]]
-    output a
+function noType main(){
+    new integer x = 1
+    while x < 5 do {
+    x + 1 == x
+    }
+    output x
 }

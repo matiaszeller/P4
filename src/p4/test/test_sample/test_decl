@@ -1,0 +1,7 @@
+Language EN
+Case camelCase
+
+function noType main(){
+    new integer x
+    output x
+}
