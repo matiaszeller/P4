@@ -71,27 +71,12 @@ class Interpreter:
         return not bool(boolean)
 
     ## Binary Expressions
-    def visit_add_expr(self, node):
+    def visit_arit_expr(self, node):
         result = self.visit(node.children[0])
 
         for i in range(1, len(node.children), 2):
             operator = node.children[i]
-            operand = self.visit(node.children[i +1])
-
-            if operator == "+":
-                result += operand
-            elif operator == "-":
-                result -= operand
-            else:
-                raise Exception(f'Unsupported operator: {operator}. Expected + or -.')
-        return result
-
-    def visit_mul_expr(self, node):
-        result = self.visit(node.children[0])
-
-        for i in range(1, len(node.children), 2):
-            operator = node.children[i]
-            operand = self.visit(node.children[i+1])
+            operand = self.visit(node.children[i + 1])
 
             if operator == "*":
                 result *= operand
@@ -99,11 +84,15 @@ class Interpreter:
                 result /= operand
             elif operator == "%":
                 result %= operand
+            elif operator == "-":
+                result -= operand
+            elif operator == "+":
+                result += operand
             else:
-                raise Exception(f'Unsupported operator: {operator}, expected *, /, or %.')
+                raise Exception(f'Unsupported operator: {operator}, expected *, /, %, + or -')
         return result
 
-    def visit_equality_expr(self, node):
+    def visit_compare_expr(self, node):
         value1 = self.visit(node.children[0])
         value2 = self.visit(node.children[2])
         operator = node.children[1]
@@ -112,15 +101,7 @@ class Interpreter:
             return value1 == value2
         elif operator == "!=":
             return value1 != value2
-        else:
-            raise Exception(f'Unsupported operator: {operator}, expected == or !=.')
-
-    def visit_relational_expr(self, node):
-        value1 = self.visit(node.children[0])
-        value2 = self.visit(node.children[2])
-        operator = node.children[1]
-
-        if operator == "<":
+        elif operator == "<":
             return value1 < value2
         elif operator == ">":
             return value1 > value2
@@ -129,7 +110,7 @@ class Interpreter:
         elif operator == ">=":
             return value1 >= value2
         else:
-            raise Exception(f'Unsupported operator: {operator}, expected <, >, <=, or >=.')
+            raise Exception(f'Unsupported operator: {operator}, expected ==, !=, <, >, <=, or >=.')
 
     def visit_and_expr(self, node):
         result = self.visit(node.children[0])

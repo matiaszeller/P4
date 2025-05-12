@@ -94,18 +94,12 @@ class ParseTreeProcessor(Transformer):
         return Tree('expr_stmt', items)
 
     def add_expr(self, items):
-        if len(items) == 1:
-            return items[0]
-        left = items[0]
-        i = 1
-        while i < len(items):
-            op = items[i]
-            right = items[i + 1]
-            left = Tree('add_expr', [left, op, right])
-            i += 2
-        return left
+        return Tree('arit_expr', items)
 
     def mul_expr(self, items):
+        return Tree('arit_expr', items)
+
+    def arit_expr(self, items):
         if len(items) == 1:
             return items[0]
         left = items[0]
@@ -113,7 +107,7 @@ class ParseTreeProcessor(Transformer):
         while i < len(items):
             op = items[i]
             right = items[i + 1]
-            left = Tree('mul_expr', [left, op, right])
+            left = Tree('arit_expr', [left, op, right])
             i += 2
         return left
 
@@ -142,10 +136,13 @@ class ParseTreeProcessor(Transformer):
         return left
 
     def equality_expr(self, items):
-        return items[0] if len(items) == 1 else Tree('equality_expr', items)
+        return Tree('compare_expr', items)
 
     def relational_expr(self, items):
-        return items[0] if len(items) == 1 else Tree('relational_expr', items)
+        return Tree('compare_expr', items)
+
+    def compare_expr(self, items):
+        return items[0] if len(items) == 1 else Tree('compare_expr', items)
 
     def uminus(self, items):
         return Tree('uminus', items)
