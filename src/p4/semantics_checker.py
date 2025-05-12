@@ -1,14 +1,5 @@
 from __future__ import annotations
 
-"""Semantic analysis for the ROLEX language.
-This tree-walk checker verifies
-• structural rules (syntax header, program layout, single-main, single-return …)
-• static / lexical scoping with no shadowing
-• strict static typing incl. arrays, function calls and control-flow guards
-The module raises subclasses of ``StaticError`` on any violation so the driver can
-stop before interpretation.
-"""
-
 # error hierarchy 
 class StaticError(Exception):
     """Base-class for all static (compile-time) errors."""
