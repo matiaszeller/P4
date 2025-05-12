@@ -1,6 +1,9 @@
 Language EN
 Case camelCase
-function integer main (){
-    new integer number = (1 + (2 + 3)) + 4
-    output number
+
+function integer main () {
+    new integer x = 5
+    if true then {
+        new integer y = 2 + 2.3
+    }
 }
