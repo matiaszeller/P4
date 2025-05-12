@@ -31,7 +31,7 @@ def main():
         return
 
     try:
-        SemanticsChecker().run(tree)
+        SemanticsChecker().run(processed_tree)
         print("Semantics checker passed")
     except Exception as e:
         print("Semantical analysis failed:", e)

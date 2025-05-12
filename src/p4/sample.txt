@@ -2,8 +2,10 @@ Language EN
 Case camelCase
 
 function integer main () {
-    new integer x = 5
-    if true then {
-        new integer y = 2 + 2.3
+    new string x = "hello"
+    new integer y = 2
+    if false or true then {
+    output x
     }
+    return 0
 }

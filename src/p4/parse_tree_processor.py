@@ -57,17 +57,17 @@ class ParseTreeProcessor(Transformer):
     def start(self, items):
         return Tree('start', [item for item in items if item is not None])
 
-    def syntax(self, _):
+    def syntax(self, items):
+        return Tree('syntax', [item for item in items if item is not None])
+
+    def NEWLINE(self, tok):
         return None
 
-    def NEWLINE(self, _):
-        return None
+    def LANG(self, tok):
+        return tok
 
-    def LANG(self, _):
-        return None
-
-    def CASE(self, _):
-        return None
+    def CASE(self, tok):
+        return tok
 
     def function_definition(self, items):
         return Tree('function_definition', [item for item in items if item is not None])
@@ -111,29 +111,20 @@ class ParseTreeProcessor(Transformer):
             i += 2
         return left
 
-    def and_expr(self, items):
+    def _build_logical(self, op_str, items):
         if len(items) == 1:
             return items[0]
         left = items[0]
-        i = 1
-        while i < len(items):
-            op = Token('AND', 'and')
-            right = items[i]
-            left = Tree('and_expr', [left, op, right])
-            i += 1
+        for right in items[1:]:
+            op = Token('LOGIC_OP', op_str)
+            left = Tree('logical_expr', [left, op, right])
         return left
 
+    def and_expr(self, items):
+        return self._build_logical('and', items)
+
     def or_expr(self, items):
-        if len(items) == 1:
-            return items[0]
-        left = items[0]
-        i = 1
-        while i < len(items):
-            op = Token('OR', 'or')
-            right = items[i]
-            left = Tree('or_expr', [left, op, right])
-            i += 1
-        return left
+        return self._build_logical('or', items)
 
     def equality_expr(self, items):
         return Tree('compare_expr', items)
@@ -177,7 +168,7 @@ class ParseTreeProcessor(Transformer):
     def BOOLEAN(self, tok):
         return tok
 
-    def string(self, tok):
+    def STRING(self, tok):
         return tok
 
     def decimal(self, tok):

@@ -49,7 +49,7 @@ UMINUS: "-"
 ?postfix_expr: primary ( call_suffix | array_access_suffix )* | primary
 call_suffix: "(" [arguments] ")"
 array_access_suffix: "[" expr "]"
-?primary: INT | ID | array_literal | "(" expr ")" | FLOAT | string | BOOLEAN | input_expr
+?primary: INT | ID | array_literal | "(" expr ")" | FLOAT | STRING | BOOLEAN | input_expr
 arguments: expr ("," expr)*
 
 array_literal: "[" [array_elements] "]"
@@ -61,7 +61,7 @@ array_suffix: "[" "]"
 TYPE: "boolean" | "integer" | "decimal" | "string" | "noType"
 LANG: "DK" | "EN"
 CASE: "camelCase" | "snake_case"
-string: /"([^"\\]*(\\.[^"\\]*)*)"/
+STRING: /"([^"\\]*(\\.[^"\\]*)*)"/
 BOOLEAN: "true" | "false"
 ID: /(?!(true|false|if|else|while|return|function|input|output|then|do)\b)[a-zæøå][a-zA-ZæøåÆØÅ0-9]*(?:_[a-zA-ZæøåÆØÅ0-9]+)*/
 COMMENT: /(?:\n)?#[\s\S]*?#/

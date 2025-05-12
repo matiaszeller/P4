@@ -31,6 +31,7 @@ class Interpreter:
             result = self.visit(child)
             if result is not None:
                 return result
+        return None
 
     ## Terminals
     def visit_token(self, node):
@@ -41,8 +42,8 @@ class Interpreter:
             return self.env.get_variable(node)
         elif node.type == "FLOAT":
             return float(node)
-        elif node.type == "NEWLINE":
-            return
+        elif node.type == "STRING":
+            return ast.literal_eval(node.value)
         elif node.type == "BOOLEAN":
             if node == "true":
                 return True
@@ -51,15 +52,6 @@ class Interpreter:
             raise Exception(f'{node} is not a valid boolean value.')
         else:
             raise Exception(f'Unknown type: {node.type}')
-
-    def visit_decimal(self, node):
-        number = node.children[0]
-        fraction = node.children[1]
-        return float(f"{number}.{fraction}")
-
-    def visit_string(self, node):
-        string = ast.literal_eval(node.children[0])
-        return string
 
     #Unary expressions
     def visit_uminus(self, node):
@@ -112,18 +104,18 @@ class Interpreter:
         else:
             raise Exception(f'Unsupported operator: {operator}, expected ==, !=, <, >, <=, or >=.')
 
-    def visit_and_expr(self, node):
+    def visit_logical_expr(self, node):
         result = self.visit(node.children[0])
-        for i in range(1, len(node.children)):
-            boolean = self.visit(node.children[i])
-            result = result and boolean
-        return result
-
-    def visit_or_expr(self, node):
-        result = self.visit(node.children[0])
-        for i in range(1, len(node.children)):
-            boolean = self.visit(node.children[i])
-            result = result or boolean
+        # children: [expr, Token(LOGIC_OP), expr, Token, expr…]
+        for i in range(1, len(node.children), 2):
+            op = node.children[i].value
+            rhs = self.visit(node.children[i+1])
+            if op == "and":
+                result = result and rhs
+            elif op == "or":
+                result = result or rhs
+            else:
+                raise Exception(f"Unknown logical op '{op}'")
         return result
 
     ## Statements
@@ -244,7 +236,7 @@ class Interpreter:
 
     ## Syntax
     def visit_syntax(self, node):
-        print(f'You are programming in {node.children[0]} using {node.children[2]}\n')
+        print(f'You are programming in {node.children[0]} using {node.children[1]}\n')
 
     ## Helper Functions
     def hasValue(self, node):
