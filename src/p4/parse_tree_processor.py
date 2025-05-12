@@ -170,6 +170,3 @@ class ParseTreeProcessor(Transformer):
 
     def STRING(self, tok):
         return tok
-
-    def decimal(self, tok):
-        return tok
