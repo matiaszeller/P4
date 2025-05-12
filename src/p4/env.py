@@ -1,4 +1,4 @@
-class Environment:
+class Environment_2:
     def __init__(self):
         self.variables = {}
 
