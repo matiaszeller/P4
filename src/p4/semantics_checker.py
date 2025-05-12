@@ -20,7 +20,6 @@ class TypeError_(StaticError):
 
 class ScopeError(StaticError):
     pass
-0
 
 class CaseError(StaticError):
     pass
@@ -137,9 +136,6 @@ class SemanticsChecker:
     #   function_definition  (handles header token, params, body, etc.)
     # ──────────────────────────────────────────────────────────────────────
     def visit_function_definition(self, n: Tree):
-        # NEW: generic grammar puts a leading FUNCTION token at index 0
-        if isinstance(n.children[0], Token) and n.children[0].type == "FUNCTION":
-            n.children.pop(0)  # discard the keyword token
 
         if not self._in_global:
             raise StructureError("Nested functions not allowed")

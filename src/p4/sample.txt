@@ -2,9 +2,8 @@ Language EN
 Case camelCase
 
 function integer main () {
-    new integer e = 1
-    new decimal t = 2.5 + e
-    output t
-
-    return 0
+    new integer x = 5
+    if true then {
+        new integer y = 2 + 2.3
+    }
 }
