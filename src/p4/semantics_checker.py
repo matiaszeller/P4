@@ -9,7 +9,7 @@ The module raises subclasses of ``StaticError`` on any violation so the driver c
 stop before interpretation.
 """
 
-# ── error hierarchy ────────────────────────────────────────────────────────────
+# error hierarchy 
 class StaticError(Exception):
     """Base-class for all static (compile-time) errors."""
 
@@ -29,7 +29,7 @@ class StructureError(StaticError):
     pass
 
 
-# ── helpers / data-structures ─────────────────────────────────────────────────
+# helpers / data-structures
 from dataclasses import dataclass
 from collections import ChainMap
 from typing import List, Dict, Any
@@ -46,7 +46,7 @@ class FunctionSig:
     body: Tree        # body "block" tree (needed for single-return check)
 
 
-# ── main checker class ────────────────────────────────────────────────────────
+# main checker class
 class SemanticsChecker:
     """Walks a Lark parse-tree and validates ROLEX static semantics."""
 
@@ -55,7 +55,7 @@ class SemanticsChecker:
     _NUM = {"integer", "decimal"}
     _ARITH = _NUM | {"string"}
 
-    # --------------------------------------------------------------------- init
+    # init
     def __init__(self) -> None:
         # ChainMap behaves like a stack of "variable → type" tables.
         self._vars: ChainMap[str, str] = ChainMap()
@@ -73,13 +73,13 @@ class SemanticsChecker:
         self._saw_syntax: bool = False
         self._language: str | None = None  # "EN" or "DK" – not used yet
 
-    # ---------------------------------------------------------------- public
+    # public
     def run(self, tree: Tree) -> None:
         """Entry-point – walk whole parse-tree then run final global checks."""
         self._walk(tree)
         self._post_checks()
 
-    # ---------------------------------------------------------------- walkers
+    # walkers
     def _walk(self, node: Tree | Token):
         """Dispatch helper calling the appropriate visit_* method."""
         if isinstance(node, Token):
@@ -90,7 +90,7 @@ class SemanticsChecker:
         for ch in node.children:
             self._walk(ch)
 
-    # .............................. literals / identifier lookup ..........
+    # literals / identifier lookup
     def _visit_token(self, tk: Token):
         ttype = tk.type
         if ttype == "INT":
@@ -109,7 +109,7 @@ class SemanticsChecker:
             return self._vars[name]
         return None  # NEWLINE, punctuation … – ignored for type purposes
 
-    # .............................. syntax header ..........................
+    # syntax header
     def visit_syntax(self, n: Tree):
         if self._saw_syntax:
             raise StructureError("Duplicate syntax header")
@@ -124,17 +124,14 @@ class SemanticsChecker:
                 f"Unsupported case style '{case_style}' – expected camelCase or snake_case")
         self._language, self._case_style, self._saw_syntax = lang, case_style, True
 
-    # .............................. program root ..........................
+    # program root
     def visit_start(self, n: Tree):
         for ch in n.children:
             self._walk(ch)
             if isinstance(ch, Tree) and ch.data not in {"syntax", "function_definition"}:
                 raise StructureError("Only function definitions allowed at top level")
 
-    # .............................. function definition ....................
-    # ──────────────────────────────────────────────────────────────────────
-    #   function_definition  (handles header token, params, body, etc.)
-    # ──────────────────────────────────────────────────────────────────────
+    # function definition (handles header token, params, body)
     def visit_function_definition(self, n: Tree):
 
         if not self._in_global:
@@ -158,7 +155,7 @@ class SemanticsChecker:
             raise ScopeError(f"Function '{fname}' already defined")
         self._func_order.append(fname)
 
-        # ── collect parameter names / types ───────────────────────────────
+        # collect parameter names / types
         pids: list[str] = []
         ptypes: list[str] = []
         if params_node:
@@ -170,24 +167,24 @@ class SemanticsChecker:
                 pids.append(pid)
                 ptypes.append(ptype)
 
-        # ── register signature (allows recursion) ─────────────────────────
+        # register signature (allows recursion)
         self._funcs[fname] = FunctionSig(ptypes, ret_t, body)
 
-        # ── new lexical scope with only parameters ────────────────────────
+        # new lexical scope with only parameters
         prev_vars, prev_ret, prev_flag = self._vars, self._current_ret, self._in_global
         self._vars = ChainMap({pid: ptype for pid, ptype in zip(pids, ptypes)})
         self._current_ret, self._in_global = ret_t, False
 
-        # ── walk body ─────────────────────────────────────────────────────
+        # walk body
         self._walk(body)
 
-        # ── restore outer scope ───────────────────────────────────────────
+        # restore outer scope 
         self._vars, self._current_ret, self._in_global = prev_vars, prev_ret, prev_flag
 
-        # ── enforce single-return-per-branch rule ─────────────────────────
+        # enforce single-return-per-branch rule 
         self._check_single_return(body)
 
-    # .............................. block / lexical scope .................
+    # block / lexical scope 
     def visit_block(self, n: Tree):
         prev = self._vars
         self._vars = self._vars.new_child()
@@ -195,7 +192,7 @@ class SemanticsChecker:
             self._walk(stmt)
         self._vars = prev
 
-    # .............................. declarations / assignments ...........
+    # declarations / assignments 
     def visit_declaration_stmt(self, n: Tree):
         # Structure: TYPE ID array_suffix* [ '=' expr ]
         base_type = n.children[0].value
@@ -203,7 +200,7 @@ class SemanticsChecker:
         self._check_case(name)
         self._shadow_check(name)
 
-        # Count array suffixes -------------------------------------------
+        # Count array suffixes -
         idx = 2
         dims = 0
         while idx < len(n.children) and isinstance(n.children[idx], Tree) and n.children[idx].data == "array_suffix":
@@ -211,7 +208,7 @@ class SemanticsChecker:
             idx += 1
         declared_type = base_type + "[]" * dims
 
-        # Optional initializer -------------------------------------------
+        # Optional initializer -
         expr_t: str | None = None
         if idx < len(n.children) and isinstance(n.children[idx], Token) and n.children[idx].value == "=":
             expr_t = self._walk(n.children[idx + 1])
@@ -221,7 +218,7 @@ class SemanticsChecker:
 
         self._vars[name] = declared_type
 
-    # ----------------------------------------------------------------- assignment
+    # assignment
     def visit_assignment_stmt(self, n: Tree):
         # Structure: lvalue '=' expr
         lval: Tree = n.children[0]
@@ -236,7 +233,7 @@ class SemanticsChecker:
         suffixes = [c for c in lval.children[1:] if isinstance(c, Tree) and c.data == "array_access_suffix"]
         idx_count = len(suffixes)
 
-        # Validate indices -------------------------------------------------
+        # Validate indices -
         for suf in suffixes:
             idx_type = self._walk(suf.children[0])
             if idx_type != "integer":
@@ -249,7 +246,7 @@ class SemanticsChecker:
                 raise TypeError_("Assignment type mismatch")
             return
 
-        # Array-element assignment ---------------------------------------
+        # Array-element assignment 
         if var_type.count("[]") < idx_count:
             raise TypeError_("Too many indices for array")
         elem_type = var_type[:-2 * idx_count]
@@ -258,7 +255,7 @@ class SemanticsChecker:
             raise TypeError_(
                 f"Assignment type mismatch – assigning {rhs_type} to {elem_type} array element")
 
-    # .............................. control-flow .........................
+    # control-flow .
     def visit_if_stmt(self, n: Tree):
         if self._walk(n.children[0]) != "boolean":
             raise TypeError_("If condition must be boolean")
@@ -277,7 +274,7 @@ class SemanticsChecker:
         if self._walk(n.children[0]) != self._current_ret and self._walk(n.children[0]) != "noType":
             raise TypeError_("Return type mismatch")
 
-    # .............................. expressions ..........................
+    # expressions 
     def visit_add_expr(self, n: Tree):
         t = self._walk(n.children[0])
         for i in range(2, len(n.children), 2):
@@ -315,7 +312,7 @@ class SemanticsChecker:
                 raise TypeError_("'or' expects booleans")
         return "boolean"
 
-    # ----------------------------- array literal -------------------------
+    # array literal -
     def visit_array_literal(self, n: Tree):
         if not n.children:
             raise TypeError_("Cannot infer type of empty array literal")
@@ -326,7 +323,7 @@ class SemanticsChecker:
             raise TypeError_("Array literal elements must have the same type")
         return first_type + "[]"
 
-    # ----------------------------- postfix chain (calls / indexing) ------
+    # postfix chain (calls / indexing) 
     def visit_postfix_expr(self, n: Tree):
         # First child is always the primary expression
         primary = n.children[0]
@@ -363,12 +360,12 @@ class SemanticsChecker:
                 raise StructureError(f"Unexpected postfix suffix '{suf.data}'")
         return current_type
 
-    # ----------------------------- input expression ----------------------
+    # input expression -
     def visit_input_expr(self, _n: Tree):
         # Dynamic – accepted at compile-time as noType
         return "noType"
 
-    # .............................. helper checks ........................
+    # helper checks 
     def _check_case(self, name: str):
         if self._case_style == "camelCase":
             if "_" in name or not name[0].islower():
@@ -382,7 +379,7 @@ class SemanticsChecker:
         if name in self._vars:
             raise ScopeError(f"Shadowing/redeclaration of '{name}'")
 
-    # .............................. post (global) checks .................
+    # post (global) checks 
     def _post_checks(self):
         if not self._saw_syntax:
             raise StructureError("Missing syntax header (Language … / Case …)")
@@ -393,7 +390,7 @@ class SemanticsChecker:
         ):
             raise StructureError("'main' must be the single last function")
 
-    # .............................. single-return checker ................
+    # single-return checker 
     def _check_single_return(self, block: Tree):
         if block.data != "block":
             return

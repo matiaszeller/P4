@@ -5,7 +5,7 @@
 %ignore WS_INLINE
 %ignore COMMENT
 
-start: syntax (COMMENT)* function_definition (NEWLINE)* (COMMENT)* function_definition*
+start: syntax (COMMENT)* function_definition ((NEWLINE)* (COMMENT)* function_definition)*
 
 syntax: "Language" LANG NEWLINE "Case" CASE NEWLINE
 
