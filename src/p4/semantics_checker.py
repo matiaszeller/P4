@@ -51,8 +51,8 @@ class SemanticsChecker:
         return None  # Ignore anything else (should not happen)
 
     def default(self, n: Tree):
-        for ch in n.children:  # Depth-first traversal for productions without a custom visitor
-            self.visit(ch)
+        for child in n.children:  # Depth-first traversal for productions without a custom visitor
+            self.visit(child)
 
     # token handling
     def visit_token(self, token: Token):
@@ -224,8 +224,8 @@ class SemanticsChecker:
     def visit_return_stmt(self, n: Tree):
         if self.current_return_type is None:
             raise StructureError("return outside function")
-        expr_t = self.visit(n.children[0])
-        if expr_t not in {self.current_return_type, "noType"}:
+        expression_type = self.visit(n.children[0])
+        if expression_type not in {self.current_return_type, "noType"}:
             raise TypeError_("Return type mismatch")
 
     # expression statement

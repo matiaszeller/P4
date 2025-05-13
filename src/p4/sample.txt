@@ -20,6 +20,7 @@ function noType main() {
     matrix[1][2] = 15
     output matrix[0][0]
     output matrix[1][2]
+    output matrix[1][1]
 
     # Test loop #
     new integer i = 0
