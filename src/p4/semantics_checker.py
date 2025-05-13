@@ -92,7 +92,11 @@ class SemanticsChecker:
 
         return_type = n.children[0].value
         function_name = n.children[1].value
-        parameters_node = next((c for c in n.children if isinstance(c, Tree) and c.data == "params"), None)
+        parameters_node = None  # look for a child node representing parameter declarations
+        for child in n.children:
+            if isinstance(child, Tree) and child.data == "params":
+                parameters_node = child  # found the params subtree
+                break  # stop once we've located it
         body = n.children[-1]
 
         if function_name in self.function_map:
@@ -167,7 +171,7 @@ class SemanticsChecker:
         # Type check initializer
         if right_hand_side_node is not None:
             right_hand_side_type = self.visit(right_hand_side_node)
-            if right_hand_side_type == "noType" and not self._is_input_expr(right_hand_side_node):
+            if right_hand_side_type == "noType" and not self.is_input_expr(right_hand_side_node):
                 raise TypeError_("Cannot initialize with value of noType")
             if right_hand_side_type != declared_type and right_hand_side_type != "noType":
                 raise TypeError_(f"Initializer type mismatch for '{name}'")
@@ -191,7 +195,7 @@ class SemanticsChecker:
                 raise TypeError_("Array index must be integer")
 
         right_hand_side_type = self.visit(right_hand_side_node)
-        if right_hand_side_type == "noType" and not self._is_input_expr(right_hand_side_node):
+        if right_hand_side_type == "noType" and not self.is_input_expr(right_hand_side_node):
             raise TypeError_("Cannot assign value of noType")
 
         if indices:  # Assignment to an element inside an array
@@ -281,7 +285,12 @@ class SemanticsChecker:
         if not n.children:
             raise TypeError_("empty array literal")
         # Flatten comma-separated list into element nodes only
-        elements = [self.visit(c) for c in n.children[0].children if not (isinstance(c, Token) and c.value == ",")]
+        elements = []  # collect element types from the first child’s subtree
+        for node in n.children[0].children:
+            if isinstance(node, Token) and node.value == ",":
+                continue  # skip comma separators
+            element_type = self.visit(node)  # compute the type of the element
+            elements.append(element_type)
         if any(t != elements[0] for t in elements):
             raise TypeError_("array elements must share type")
         return elements[0] + "[]"  # Resulting type is elementType[]
@@ -303,7 +312,11 @@ class SemanticsChecker:
 
                 # Parse argument list, skipping comma tokens
                 raw_arguments = suf.children[0].children if suf.children else []
-                argument_nodes = [c for c in raw_arguments if not (isinstance(c, Token) and c.value == ",")]
+                argument_nodes = []  # collect actual argument nodes, skipping commas
+                for node in raw_arguments:
+                    if isinstance(node, Token) and node.value == ",":
+                        continue  # ignore comma separators
+                    argument_nodes.append(node)
                 argument_types = [self.visit(a) for a in argument_nodes]
 
                 if len(argument_types) != len(signature.parameters):
@@ -349,7 +362,7 @@ class SemanticsChecker:
         if name in self.variable_map:
             raise ScopeError(f"shadowing '{name}'")
 
-    def _is_input_expr(self, node: Tree | Token | None) -> bool:
+    def is_input_expr(self, node: Tree | Token | None) -> bool:
         return isinstance(node, Tree) and node.data == "input_expr"
 
     # global checks
@@ -357,7 +370,9 @@ class SemanticsChecker:
         if not self.saw_syntax:
             raise StructureError("missing syntax header")
         # Exactly one main, and it must be last
-        if not self.function_order or self.function_order[-1] != "main" or self.function_order.count("main") != 1:
+        has_main = self.function_order.count("main") == 1  # check there is exactly one 'main'
+        is_last = bool(self.function_order) and self.function_order[-1] == "main"  # check 'main' is the last element
+        if not has_main or not is_last:
             raise StructureError("'main' must be last function")
 
     # single-return-per-branch
@@ -365,7 +380,11 @@ class SemanticsChecker:
         # Enforce at most one return per linear execution branch (no early exits after return)
         if block.data != "block":
             return
-        if sum(1 for c in block.children if isinstance(c, Tree) and c.data == "return_stmt") > 1:
+        return_count = 0  # count return statements in this block
+        for child in block.children:
+            if isinstance(child, Tree) and child.data == "return_stmt":
+                return_count += 1  # increment for each return statement found
+        if return_count > 1:
             raise StructureError("Multiple returns in same branch")
         for c in block.children:
             if not isinstance(c, Tree):
@@ -386,8 +405,8 @@ class SemanticsChecker:
         if node.data == "return_stmt":
             return True
         if node.data == "block":
-            for st in node.children:
-                if isinstance(st, Tree) and self.body_guarantees_return(st):
+            for statement in node.children:
+                if isinstance(statement, Tree) and self.body_guarantees_return(statement):
                     return True  # First guaranteed-return statement exits the block
             return False
         if node.data == "if_stmt":

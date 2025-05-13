@@ -1,11 +1,6 @@
 Language EN
 Case camelCase
 
-function noType test(integer x){
-    new integer x = x
-    output x
-}
-
 function noType main() {
     new string x = "hello"
     new string y = "hihi"
@@ -14,5 +9,4 @@ function noType main() {
         new integer t = 5
     }
     output t
-    test(5)
 }
