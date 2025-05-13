@@ -6,7 +6,7 @@ class Interpreter:
     def __init__(self):
         self.env = Environment()
 
-    #Recursive logic for visits
+    # Recursive logic for visits
     def visit(self, node):
         if isinstance(node, Tree):
             data = node.data
@@ -33,7 +33,6 @@ class Interpreter:
                 return result
         return None
 
-    ## Terminals
     def visit_token(self, node):
         print(node.type)
         if node.type == "INT":
@@ -45,15 +44,11 @@ class Interpreter:
         elif node.type == "STRING":
             return ast.literal_eval(node.value)
         elif node.type == "BOOLEAN":
-            if node == "true":
-                return True
-            elif node == "false":
-                return False
-            raise Exception(f'{node} is not a valid boolean value.')
+            return node.value == "true"
         else:
             raise Exception(f'Unknown type: {node.type}')
 
-    #Unary expressions
+    # Unary expressions
     def visit_uminus(self, node):
         value = self.visit(node.children[1])
         return -value
@@ -67,7 +62,7 @@ class Interpreter:
         result = self.visit(node.children[0])
 
         for i in range(1, len(node.children), 2):
-            operator = node.children[i]
+            operator = node.children[i].value
             operand = self.visit(node.children[i + 1])
 
             if operator == "*":
@@ -87,7 +82,7 @@ class Interpreter:
     def visit_compare_expr(self, node):
         value1 = self.visit(node.children[0])
         value2 = self.visit(node.children[2])
-        operator = node.children[1]
+        operator = node.children[1].value
 
         if operator == "==":
             return value1 == value2
@@ -125,23 +120,25 @@ class Interpreter:
     def visit_declaration_stmt(self, node):
         name = node.children[1]
         type = node.children[0]
-        children_amount = len(node.children)
-        if children_amount == 2: #Contains only name and type
-            self.env.declare_variable(name,type)
-        elif self.isArray(node):
-            if self.hasValue(node.children[-2]): #Contains initial value for array
-                array_depth = len(node.children) - 3 #name, type and value children are discounted
-                array_values = self.visit(node.children[-1])
-                if not isinstance(array_values, list):
-                    raise Exception(f'Cannot assign {array_values} to array variable {name}. Make sure it is a list of values separated by commas, and wrapped in brackets.')
-                self.env.declare_variable(name, type, array_depth)
-                self.env.set_variable(name, array_values)
-            else:
-                array_depth = len(node.children) - 2
-                self.env.declare_variable(name, type, array_depth)
-        else:
-            self.env.declare_variable(name, type)
-            self.env.set_variable(name, self.visit(node.children[-1]))
+
+        # determine array depth and position of possible value
+        array_depth = 0
+        idx = 2
+        while idx < len(node.children) and isinstance(node.children[idx], Tree) and node.children[idx].data == "array_suffix":
+            array_depth += 1
+            idx += 1
+
+        has_value = idx < len(node.children)
+
+        # declare variable
+        self.env.declare_variable(name, type, array_depth)
+
+        # set initial value if present
+        if has_value:
+            value = self.visit(node.children[idx])
+            if array_depth > 0 and not isinstance(value, list):
+                raise Exception(f'Cannot assign {value} to array variable {name}. Make sure it is a list of values separated by commas, and wrapped in brackets.')
+            self.env.set_variable(name, value)
 
     def visit_assignment_stmt(self, node):
         name = node.children[0].children[0]
@@ -155,7 +152,6 @@ class Interpreter:
             for i in range(index_depth):
                 index_list[i] = self.visit(node.children[0].children[i+1])
             self.env.set_variable(name, value, index_list)
-
 
     def visit_if_stmt(self, node):
         condition = node.children[0]
@@ -195,7 +191,6 @@ class Interpreter:
             self.env.declare_function(name, type, block, parameters)
         else:
             self.env.declare_function(name, type, block)
-
 
     def visit_postfix_expr(self, node):
         name = node.children[0]
@@ -240,11 +235,7 @@ class Interpreter:
 
     ## Helper Functions
     def hasValue(self, node):
-        print(node.data)
-        if node.data == "array_suffix":
-            return True
-        else:
-            return False
+        return not (isinstance(node, Tree) and node.data == "array_suffix")
 
     def isArray(self, node):
         try:
@@ -252,5 +243,5 @@ class Interpreter:
                 return True
             else:
                 return False
-        except IndexError and AttributeError:
+        except (IndexError, AttributeError):
             return False

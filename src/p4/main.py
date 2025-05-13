@@ -37,11 +37,9 @@ def main():
         print("Semantical analysis failed:", e)
         return
 
-    try:
-        interpreter = Interpreter()
-        interpreter.visit(processed_tree)
-    except Exception as e:
-        print("Interpreter error:", e)
+
+    interpreter = Interpreter()
+    interpreter.visit(processed_tree)
 
 if __name__ == "__main__":
     main()

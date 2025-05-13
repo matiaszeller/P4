@@ -11,8 +11,14 @@ class Environment:
             'type': type,
             'arrayDepth': array_depth
         }
+        # create a single-slot placeholder for each dimension
         for _ in range(array_depth):
             self.variables[name]['value'] = [self.variables[name]['value']]
+
+    def ensure_length(self, lst, index, fill):
+        # grow list so that index is valid
+        while len(lst) <= index:
+            lst.append(fill)
 
     def get_variable(self, name, array_index=None):
         if name not in self.variables:
@@ -34,19 +40,30 @@ class Environment:
             raise NameError(f'Variable {name} is not defined')
 
         variable_data = self.variables[name]
-        target = variable_data['value']
         variable_dimension = variable_data['arrayDepth']
         value_dimension = self._get_dimensions(value)
         index_dimension = len(array_index) if array_index is not None else 0
 
         if value_dimension + index_dimension != variable_dimension:
-            raise ValueError(f'Value {value} has wrong dimension, expected {variable_dimension + index_dimension}')
-        elif index_dimension == 0:
+            raise ValueError(f'Value {value} has wrong dimension, expected {variable_dimension - index_dimension}')
+
+        # scalar assignment
+        if index_dimension == 0:
             variable_data['value'] = value
-        else:
-            for i in array_index[:-1]:
-                target = target[i]
-            target[array_index[-1]] = value
+            return
+
+        # indexed assignment (auto-extend lists if needed)
+        target = variable_data['value']
+        for depth, idx in enumerate(array_index[:-1]):
+            self.ensure_length(target, idx, [])
+            if target[idx] is None:
+                # create next level list placeholder
+                target[idx] = []
+            target = target[idx]
+
+        last_idx = array_index[-1]
+        self.ensure_length(target, last_idx, None)
+        target[last_idx] = value
 
     def declare_function(self, name, return_type, block, parameters=None):
         if name in self.functions:
