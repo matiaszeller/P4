@@ -1,229 +1,278 @@
-from __future__ import annotations
-from dataclasses import dataclass
-from collections import ChainMap
-from typing import List, Dict
-from lark import Tree, Token
+from dataclasses import dataclass  # Lightweight record for function metadata
+from collections import ChainMap  # Nested, write-through symbol tables
+from typing import List, Dict  # Static typing helpers
+from lark import Tree, Token  # AST node and token classes from Lark
 
 # error hierarchy
-class StaticError(Exception): pass
-class TypeError_(StaticError): pass
-class ScopeError(StaticError): pass
-class CaseError(StaticError): pass
-class StructureError(StaticError): pass
+class StaticError(Exception): pass  # Base class for all static-analysis errors
+class TypeError_(StaticError): pass  # Type mismatch or misuse
+class ScopeError(StaticError): pass  # Undeclared identifier or variable shadowing
+class CaseError(StaticError): pass  # Wrong identifier case style
+class StructureError(StaticError): pass  # Violations of language structure rules
 
 # helper dataclass
 @dataclass
 class FunctionSig:
-    params: List[str]
-    ret: str
-    body: Tree
+    parameters: List[str]  # Formal parameter types
+    return_type: str  # Declared return type
+    body: Tree  # AST subtree of the function body
 
 # static semantics checker
 class SemanticsChecker:
     # primitive sets
-    PRIMITIVES = {"boolean", "integer", "decimal", "string", "noType"}
-    _NUM = {"integer", "decimal"}
-    _ARITH = _NUM | {"string"}
+    PRIMITIVES = {"boolean", "integer", "decimal", "string", "noType"}  # All built-in types
+    _NUM = {"integer", "decimal"}  # Numeric types allowed in arithmetic
+    _ARITH = _NUM | {"string"}  # Types that support '+'
 
     def __init__(self) -> None:
-        self._vars: ChainMap[str, str] = ChainMap()
-        self._funcs: Dict[str, FunctionSig] = {}
-        self._current_ret: str | None = None
-        self._in_global: bool = True
-        self._case_style: str = "camelCase"
-        self._func_order: list[str] = []
-        self._saw_syntax: bool = False
-        self._in_expr_stmt: bool = False
+        self.variable_map: ChainMap[str, str] = ChainMap()  # Stack of lexical scopes
+        self.function_map: Dict[str, FunctionSig] = {}  # Registry of all functions
+        self.current_return_type: str | None = None  # Expected return type in the current function
+        self.in_global_scope: bool = True  # True until we descend into the first function body
+        self.case_style: str = "camelCase"  # Active identifier style, set by syntax header
+        self.function_order: list[str] = []  # Definition order, used to enforce 'main' last
+        self.saw_syntax: bool = False  # Guards against multiple syntax headers
+        self.in_expr_stmt: bool = False  # Suppresses "void value" error in expression statements
 
     # main entry
     def run(self, tree: Tree) -> None:
-        self._walk(tree)
-        self._post_checks()
+        self.visit(tree)
+        self.post_checks()  # Global invariants checked after full walk
 
-    # walker
-    def _walk(self, node: Tree | Token):
-        if isinstance(node, Token):
-            return self._visit_token(node)
-        return getattr(self, f"visit_{node.data}", self._default)(node)
+    # generic walker
+    def visit(self, node):
+        if isinstance(node, Tree):
+            data = node.data
+            method_name = f'visit_{data}'
+            method = getattr(self, method_name, self.default)
+            return method(node)  # Dispatch to dedicated visitor or default
+        elif isinstance(node, Token):
+            return self.visit_token(node)
+        return None  # Ignore anything else (should not happen)
 
-    def _default(self, n: Tree):
-        for ch in n.children:
-            self._walk(ch)
+    def default(self, n: Tree):
+        for ch in n.children:  # Depth-first traversal for productions without a custom visitor
+            self.visit(ch)
 
     # token handling
-    def _visit_token(self, tk: Token):
-        if tk.type == "INT":     return "integer"
-        if tk.type == "FLOAT":   return "decimal"
-        if tk.type == "BOOLEAN": return "boolean"
-        if tk.type == "STRING":  return "string"
-        if tk.type == "ID":
-            if tk.value not in self._vars:
-                raise ScopeError(f"Undeclared identifier '{tk.value}'")
-            return self._vars[tk.value]
-        return None
+    def visit_token(self, token: Token):
+        # Constant literals map directly to primitive types
+        if token.type == "INT":     return "integer"
+        if token.type == "FLOAT":   return "decimal"
+        if token.type == "BOOLEAN": return "boolean"
+        if token.type == "STRING":  return "string"
+        if token.type == "ID":  # Identifier lookup must respect scope
+            if token.value not in self.variable_map:
+                raise ScopeError(f"Undeclared identifier '{token.value}'")
+            return self.variable_map[token.value]
+        return None  # Commas, brackets, etc. are ignored here
 
     # syntax header
     def visit_syntax(self, n: Tree):
-        if self._saw_syntax:
+        if self.saw_syntax:  # Only one header allowed
             raise StructureError("Duplicate syntax header")
-        lang, case = n.children[0].value, n.children[1].value
-        if lang not in {"EN", "DK"}: raise StructureError("Unsupported language")
+        language = n.children[0].value
+        case = n.children[1].value
+        if language not in {"EN", "DK"}: raise StructureError("Unsupported language")
         if case not in {"camelCase", "snake_case"}: raise StructureError("Unsupported case style")
-        self._case_style, self._saw_syntax = case, True
+        self.case_style = case
+        self.saw_syntax = True
 
-    # start
+    # start symbol
     def visit_start(self, n: Tree):
-        for ch in n.children:
-            self._walk(ch)
-            if isinstance(ch, Tree) and ch.data not in {"syntax", "function_definition"}:
+        for child in n.children:
+            self.visit(child)
+            # After syntax header, only function definitions are legal at top level
+            if isinstance(child, Tree) and child.data not in {"syntax", "function_definition"}:
                 raise StructureError("Only function definitions allowed at top level")
 
     # functions
     def visit_function_definition(self, n: Tree):
-        if not self._in_global: raise StructureError("Nested functions not allowed")
-        ret_t, fname = n.children[0].value, n.children[1].value
-        params_node = next((c for c in n.children if isinstance(c, Tree) and c.data == "params"), None)
+        if not self.in_global_scope: raise StructureError("Nested functions not allowed")
+
+        return_type = n.children[0].value
+        function_name = n.children[1].value
+        parameters_node = next((c for c in n.children if isinstance(c, Tree) and c.data == "params"), None)
         body = n.children[-1]
-        if fname in self._funcs: raise ScopeError(f"Function '{fname}' already defined")
-        self._func_order.append(fname)
 
-        p_names, p_types = [], []
-        if params_node:
-            for p in params_node.children:
-                ptype, pid = p.children[0].value, p.children[1].value
-                self._check_case(pid)
-                self._shadow_check(pid)
-                p_names.append(pid)
-                p_types.append(ptype)
+        if function_name in self.function_map:
+            raise ScopeError(f"Function '{function_name}' already defined")
+        self.function_order.append(function_name)
 
-        self._funcs[fname] = FunctionSig(p_types, ret_t, body)
+        # Collect parameter names and types with case- and shadow-checking
+        parameter_names, parameter_types = [], []
+        if parameters_node:
+            for parameters in parameters_node.children:
+                parameter_type = parameters.children[0].value
+                parameter_id = parameters.children[1].value
+                self.check_case(parameter_id)
+                self.shadow_check(parameter_id)
+                parameter_names.append(parameter_id)
+                parameter_types.append(parameter_type)
 
-        outer_vars, outer_ret, outer_flag = self._vars, self._current_ret, self._in_global
-        self._vars = ChainMap(dict(zip(p_names, p_types)))
-        self._current_ret, self._in_global = ret_t, False
-        self._walk(body)
+        self.function_map[function_name] = FunctionSig(parameter_types, return_type, body)
 
-        if ret_t != "noType" and not self._body_guarantees_return(body):
-            raise StructureError(f"Function '{fname}' may exit without returning a value")
+        # Save outer context, then push new scope for parameters
+        outer_vars = self.variable_map
+        outer_return_type = self.current_return_type
+        outer_flag = self.in_global_scope
 
-        self._vars, self._current_ret, self._in_global = outer_vars, outer_ret, outer_flag
-        self._check_single_return(body)
+        self.variable_map = ChainMap(dict(zip(parameter_names, parameter_types)))
+        self.current_return_type = return_type
+        self.in_global_scope = False
+        self.visit(body)
+
+        # Non-void functions must guarantee a return on every path
+        if return_type != "noType" and not self.body_guarantees_return(body):
+            raise StructureError(f"Function '{function_name}' may exit without returning a value")
+
+        # Restore outer context
+        self.variable_map = outer_vars
+        self.current_return_type = outer_return_type
+        self.in_global_scope = outer_flag
+
+        self.check_single_return(body)  # Enforce at most one return per branch
 
     # blocks
     def visit_block(self, n: Tree):
+        # Sequential walk; nothing special aside from nesting handled by scopes elsewhere
         for st in n.children:
-            self._walk(st)
+            self.visit(st)
 
-    # declarations
+    # variable declarations
     def visit_declaration_stmt(self, n: Tree):
-        base, name = n.children[0].value, n.children[1].value
-        self._check_case(name)
-        self._shadow_check(name)
-        idx, dims = 2, 0
-        while idx < len(n.children) and isinstance(n.children[idx], Tree) and n.children[idx].data == "array_suffix":
-            dims += 1
-            idx += 1
-        declared_t = base + "[]" * dims
-        rhs_node = None
-        if idx < len(n.children):
-            child = n.children[idx]
-            rhs_node = n.children[idx + 1] if isinstance(child, Token) and child.value == "=" else child
-            if isinstance(rhs_node, list): rhs_node = rhs_node[0] if rhs_node else None
-        if rhs_node is not None:
-            rhs_t = self._walk(rhs_node)
-            if rhs_t == "noType" and not self._is_input_expr(rhs_node):
-                raise TypeError_("Cannot initialise with value of noType")
-            if rhs_t != declared_t and rhs_t != "noType":
-                raise TypeError_(f"Initialiser type mismatch for '{name}'")
-        self._vars[name] = declared_t
+        base = n.children[0].value
+        name = n.children[1].value
+        self.check_case(name)
+        self.shadow_check(name)
+
+        # Count [] suffixes to build full array type
+        index = 2
+        dimensions = 0
+        while index < len(n.children) and isinstance(n.children[index], Tree) and n.children[index].data == "array_suffix":
+            dimensions += 1
+            index += 1
+        declared_type = base + "[]" * dimensions
+
+        # Detect optional initializer
+        right_hand_side_node = None
+        if index < len(n.children):
+            child = n.children[index]
+            # Either '=' token or the expression directly if '=' omitted in parse tree
+            right_hand_side_node = n.children[index + 1] if isinstance(child, Token) and child.value == "=" else child
+            # Grammar sometimes wraps expression list in another list; unwrap if so
+            if isinstance(right_hand_side_node, list):
+                right_hand_side_node = right_hand_side_node[0] if right_hand_side_node else None
+
+        # Type check initializer
+        if right_hand_side_node is not None:
+            right_hand_side_type = self.visit(right_hand_side_node)
+            if right_hand_side_type == "noType" and not self._is_input_expr(right_hand_side_node):
+                raise TypeError_("Cannot initialize with value of noType")
+            if right_hand_side_type != declared_type and right_hand_side_type != "noType":
+                raise TypeError_(f"Initializer type mismatch for '{name}'")
+
+        self.variable_map[name] = declared_type  # Enter binding into current scope
 
     # assignments
     def visit_assignment_stmt(self, n: Tree):
-        lval, rhs_node = n.children[0], n.children[-1]
-        name = lval.children[0].value
-        if name not in self._vars: raise ScopeError(f"Variable '{name}' not declared")
-        var_t = self._vars[name]
-        indices = [c for c in lval.children[1:] if c.data == "array_access_suffix"]
+        left_value = n.children[0]
+        right_hand_side_node = n.children[-1]
+
+        name = left_value.children[0].value
+        if name not in self.variable_map:
+            raise ScopeError(f"Variable '{name}' not declared")
+        variable_type = self.variable_map[name]
+
+        # Collect all array index suffixes to know how deep we dereference
+        indices = [c for c in left_value.children[1:] if c.data == "array_access_suffix"]
         for suf in indices:
-            if self._walk(suf.children[0]) != "integer":
+            if self.visit(suf.children[0]) != "integer":
                 raise TypeError_("Array index must be integer")
-        rhs_t = self._walk(rhs_node)
-        if rhs_t == "noType" and not self._is_input_expr(rhs_node):
+
+        right_hand_side_type = self.visit(right_hand_side_node)
+        if right_hand_side_type == "noType" and not self._is_input_expr(right_hand_side_node):
             raise TypeError_("Cannot assign value of noType")
-        if indices:
-            if var_t.count("[]") < len(indices):
+
+        if indices:  # Assignment to an element inside an array
+            if variable_type.count("[]") < len(indices):
                 raise TypeError_("Too many indices for array")
-            elem_t = var_t[:-2 * len(indices)]
-            if rhs_t != elem_t and rhs_t != "noType":
+            element_type = variable_type[:-2 * len(indices)]  # Strip one dimension per index
+            if right_hand_side_type != element_type and right_hand_side_type != "noType":
                 raise TypeError_("Assignment type mismatch")
-        else:
-            if rhs_t != var_t and rhs_t != "noType":
+        else:  # Assignment to whole variable
+            if right_hand_side_type != variable_type and right_hand_side_type != "noType":
                 raise TypeError_("Assignment type mismatch")
 
     # control flow
     def visit_if_stmt(self, n: Tree):
-        if self._walk(n.children[0]) != "boolean":
+        if self.visit(n.children[0]) != "boolean":
             raise TypeError_("If-condition must be boolean")
-        self._walk(n.children[1])
-        if len(n.children) == 3: self._walk(n.children[2])
+        self.visit(n.children[1])  # then branch
+        if len(n.children) == 3:
+            self.visit(n.children[2])  # else branch
 
     def visit_while_stmt(self, n: Tree):
-        if self._walk(n.children[0]) != "boolean":
+        if self.visit(n.children[0]) != "boolean":
             raise TypeError_("While-condition must be boolean")
-        self._walk(n.children[1])
+        self.visit(n.children[1])
 
     def visit_return_stmt(self, n: Tree):
-        if self._current_ret is None:
+        if self.current_return_type is None:
             raise StructureError("return outside function")
-        expr_t = self._walk(n.children[0])
-        if expr_t not in {self._current_ret, "noType"}:
+        expr_t = self.visit(n.children[0])
+        if expr_t not in {self.current_return_type, "noType"}:
             raise TypeError_("Return type mismatch")
 
     # expression statement
     def visit_expr_stmt(self, n: Tree):
-        prev = self._in_expr_stmt
-        self._in_expr_stmt = True
-        self._walk(n.children[0])
-        self._in_expr_stmt = prev
+        previous = self.in_expr_stmt
+        self.in_expr_stmt = True  # Suppress "void value" error for RHS 'noType'
+        self.visit(n.children[0])
+        self.in_expr_stmt = previous
 
     # arithmetic expression
     def visit_arit_expr(self, n: Tree):
-        left_t = self._walk(n.children[0])
-        op_tok: Token = n.children[1] if len(n.children) == 3 else None
-        if op_tok is None:
-            return left_t
-        right_t = self._walk(n.children[2])
-        op = op_tok.value
-        if op == "+":
-            if left_t != right_t or left_t not in self._ARITH:
+        left_type = self.visit(n.children[0])
+        operator_token: Token = n.children[1] if len(n.children) == 3 else None
+        if operator_token is None:  # Single operand (propagates type)
+            return left_type
+        right_type = self.visit(n.children[2])
+        operator = operator_token.value
+
+        # '+' supports string concatenation; others require numeric
+        if operator == "+":
+            if left_type != right_type or left_type not in self._ARITH:
                 raise TypeError_("operands of + must match and be numeric or string")
-            return left_t
-        if op in {"-", "*", "%"}:
-            if left_t != right_t or left_t not in self._NUM:
-                raise TypeError_(f"operands of {op} must both be integer or decimal")
-            return left_t
-        if op == "/":
-            if left_t != right_t or left_t not in self._NUM:
+            return left_type
+        if operator in {"-", "*", "%"}:
+            if left_type != right_type or left_type not in self._NUM:
+                raise TypeError_(f"operands of {operator} must both be integer or decimal")
+            return left_type
+        if operator == "/":
+            if left_type != right_type or left_type not in self._NUM:
                 raise TypeError_("operands of / must both be integer or decimal")
-            return "decimal"
-        raise StructureError(f"unknown operator {op}")
+            return "decimal"  # Division always yields decimal
+        raise StructureError(f"unknown operator {operator}")
 
     # comparison
     def visit_compare_expr(self, n: Tree):
-        l_t = self._walk(n.children[0])
-        op = n.children[1].value
-        r_t = self._walk(n.children[2])
-        if op in {"==", "!="}:
-            if l_t != r_t: raise TypeError_("operands of ==/!= must match")
-        else:
-            if l_t != r_t or l_t not in self._NUM:
-                raise TypeError_(f"operands of {op} must both be integer or decimal")
+        left_type = self.visit(n.children[0])
+        operator = n.children[1].value
+        right_type = self.visit(n.children[2])
+        if operator in {"==", "!="}:  # Equality works for any matching types
+            if left_type != right_type:
+                raise TypeError_("operands of ==/!= must match")
+        else:  # <, <=, >, >= restricted to numbers
+            if left_type != right_type or left_type not in self._NUM:
+                raise TypeError_(f"operands of {operator} must both be integer or decimal")
         return "boolean"
 
     # logical and/or
     def visit_logical_expr(self, n: Tree):
+        # Children alternate operand, operator, operand, ...
         for i in range(0, len(n.children), 2):
-            if self._walk(n.children[i]) != "boolean":
+            if self.visit(n.children[i]) != "boolean":
                 raise TypeError_("logical operands must be boolean")
         return "boolean"
 
@@ -231,94 +280,121 @@ class SemanticsChecker:
     def visit_array_literal(self, n: Tree):
         if not n.children:
             raise TypeError_("empty array literal")
-        elems = [self._walk(c) for c in n.children[0].children if not (isinstance(c, Token) and c.value == ",")]
-        if any(t != elems[0] for t in elems):
+        # Flatten comma-separated list into element nodes only
+        elements = [self.visit(c) for c in n.children[0].children if not (isinstance(c, Token) and c.value == ",")]
+        if any(t != elements[0] for t in elements):
             raise TypeError_("array elements must share type")
-        return elems[0] + "[]"
+        return elements[0] + "[]"  # Resulting type is elementType[]
 
-    # postfix (calls / indexing)
+    # postfix (function call, array indexing)
     def visit_postfix_expr(self, n: Tree):
         primary = n.children[0]
-        id_tok: Token | None = primary if isinstance(primary, Token) and primary.type == "ID" else None
-        cur_t: str | None = None
+        id_token: Token | None = primary if isinstance(primary, Token) and primary.type == "ID" else None
+        current_type: str | None = None  # Tracks the running type as suffixes are processed
+
         for suf in n.children[1:]:
             if suf.data == "call_suffix":
-                if id_tok is None:
+                # First suffix can only be applied to an identifier
+                if id_token is None:
                     raise StructureError("function call must target identifier")
-                sig = self._funcs.get(id_tok.value)
-                if sig is None:
-                    raise ScopeError(f"call to undefined function '{id_tok.value}'")
-                raw_args = suf.children[0].children if suf.children else []
-                arg_nodes = [c for c in raw_args if not (isinstance(c, Token) and c.value == ",")]
-                arg_types = [self._walk(a) for a in arg_nodes]
-                if len(arg_types) != len(sig.params):
-                    raise StructureError(f"wrong number of arguments in call to '{id_tok.value}'")
-                for a, expected in zip(arg_types, sig.params):
-                    if a not in {expected, "noType"}:
+                signature = self.function_map.get(id_token.value)
+                if signature is None:
+                    raise ScopeError(f"call to undefined function '{id_token.value}'")
+
+                # Parse argument list, skipping comma tokens
+                raw_arguments = suf.children[0].children if suf.children else []
+                argument_nodes = [c for c in raw_arguments if not (isinstance(c, Token) and c.value == ",")]
+                argument_types = [self.visit(a) for a in argument_nodes]
+
+                if len(argument_types) != len(signature.parameters):
+                    raise StructureError(f"wrong number of arguments in call to '{id_token.value}'")
+                for arg_t, expected in zip(argument_types, signature.parameters):
+                    if arg_t not in {expected, "noType"}:
                         raise TypeError_("argument type mismatch")
-                cur_t, id_tok = sig.ret, None
+
+                current_type, id_token = signature.return_type, None  # Type post-call; clear id_token
             elif suf.data == "array_access_suffix":
-                cur_t = self._walk(primary) if cur_t is None else cur_t
-                if not cur_t.endswith("[]"):
+                # Resolve base type for the first indexing occurrence
+                current_type = self.visit(primary) if current_type is None else current_type
+                if not current_type.endswith("[]"):
                     raise TypeError_("indexing non-array value")
-                if self._walk(suf.children[0]) != "integer":
+                if self.visit(suf.children[0]) != "integer":
                     raise TypeError_("array index must be integer")
-                cur_t = cur_t[:-2]
+                current_type = current_type[:-2]  # Drop one dimension
             else:
                 raise StructureError("unexpected postfix suffix")
-        if cur_t is None:
-            cur_t = self._walk(primary)
-        if cur_t == "noType" and not self._in_expr_stmt:
+
+        if current_type is None:  # No suffixes: just primary expression
+            current_type = self.visit(primary)
+
+        # Using a void/noType value inside an expression (except expr_stmt) is illegal
+        if current_type == "noType" and not self.in_expr_stmt:
             raise TypeError_("void value used in expression")
-        return cur_t
+        return current_type
 
-    # input lit
-    def visit_input_expr(self, _): return "noType"
+    # input literal
+    def visit_input_expr(self, _):
+        return "noType"  # Represents read-from-stdin; has no concrete type
 
-    # helpers
-    def _check_case(self, name: str):
-        if self._case_style == "camelCase":
-            if "_" in name or not name[0].islower(): raise CaseError(f"'{name}' not camelCase")
-        else:
-            if any(c.isupper() for c in name): raise CaseError(f"'{name}' not snake_case")
+    # identifier case enforcement
+    def check_case(self, name: str):
+        if self.case_style == "camelCase":
+            if "_" in name or not name[0].islower():
+                raise CaseError(f"'{name}' not camelCase")
+        else:  # snake_case
+            if any(c.isupper() for c in name):
+                raise CaseError(f"'{name}' not snake_case")
 
-    def _shadow_check(self, name: str):
-        if name in self._vars: raise ScopeError(f"shadowing '{name}'")
+    def shadow_check(self, name: str):
+        if name in self.variable_map:
+            raise ScopeError(f"shadowing '{name}'")
 
     def _is_input_expr(self, node: Tree | Token | None) -> bool:
         return isinstance(node, Tree) and node.data == "input_expr"
 
     # global checks
-    def _post_checks(self):
-        if not self._saw_syntax: raise StructureError("missing syntax header")
-        if not self._func_order or self._func_order[-1] != "main" or self._func_order.count("main") != 1:
+    def post_checks(self):
+        if not self.saw_syntax:
+            raise StructureError("missing syntax header")
+        # Exactly one main, and it must be last
+        if not self.function_order or self.function_order[-1] != "main" or self.function_order.count("main") != 1:
             raise StructureError("'main' must be last function")
 
     # single-return-per-branch
-    def _check_single_return(self, block: Tree):
-        if block.data != "block": return
+    def check_single_return(self, block: Tree):
+        # Enforce at most one return per linear execution branch (no early exits after return)
+        if block.data != "block":
+            return
         if sum(1 for c in block.children if isinstance(c, Tree) and c.data == "return_stmt") > 1:
             raise StructureError("Multiple returns in same branch")
         for c in block.children:
-            if not isinstance(c, Tree): continue
+            if not isinstance(c, Tree):
+                continue
             if c.data == "if_stmt":
-                self._check_single_return(c.children[1])
-                if len(c.children) == 3: self._check_single_return(c.children[2])
+                # Check both branches recursively
+                self.check_single_return(c.children[1])
+                if len(c.children) == 3:
+                    self.check_single_return(c.children[2])
             elif c.data == "while_stmt":
-                self._check_single_return(c.children[1])
+                self.check_single_return(c.children[1])
             elif c.data == "block":
-                self._check_single_return(c)
+                self.check_single_return(c)
 
     # full-path return check
-    def _body_guarantees_return(self, node: Tree) -> bool:
-        if node.data == "return_stmt": return True
+    def body_guarantees_return(self, node: Tree) -> bool:
+        # True if every possible execution path ends in a return_stmt
+        if node.data == "return_stmt":
+            return True
         if node.data == "block":
             for st in node.children:
-                if isinstance(st, Tree) and self._body_guarantees_return(st): return True
+                if isinstance(st, Tree) and self.body_guarantees_return(st):
+                    return True  # First guaranteed-return statement exits the block
             return False
         if node.data == "if_stmt":
-            then_ok = self._body_guarantees_return(node.children[1])
+            then_ok = self.body_guarantees_return(node.children[1])
             else_ok = False
-            if len(node.children) == 3: else_ok = self._body_guarantees_return(node.children[2])
+            if len(node.children) == 3:
+                else_ok = self.body_guarantees_return(node.children[2])
+            # Both branches must guarantee return
             return then_ok and else_ok
-        return False
+        return False  # while, expressions, etc. do not guarantee return

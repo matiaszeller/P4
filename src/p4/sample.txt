@@ -1,11 +1,18 @@
 Language EN
 Case camelCase
 
-function integer main () {
-    new string x = "hello"
-    new integer y = 2
-    if false or true then {
+function noType test(integer x){
+    new integer x = x
     output x
+}
+
+function noType main() {
+    new string x = "hello"
+    new string y = "hihi"
+    output x + y
+    if 6 > 5 then {
+        new integer t = 5
     }
-    return 0
+    output t
+    test(5)
 }
