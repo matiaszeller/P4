@@ -1,15 +1,60 @@
-from __future__ import annotations
 from dataclasses import dataclass
 from collections import ChainMap
 from typing import List, Dict
 from lark import Tree, Token
 
 # error hierarchy
-class StaticError(Exception): pass
-class TypeError_(StaticError): pass
-class ScopeError(StaticError): pass
-class CaseError(StaticError): pass
-class StructureError(StaticError): pass
+class StaticError(Exception):
+    """ the form/base of all errors"""
+    def __init__(self, message: str, line: int | None = None):
+        if line is not None:
+            message = f"At line {line}: {message}"
+        super().__init__(message)
+        self.line = line
+
+
+            """
+            if end_line is not None:
+                message = f"At line {start_line}-{end_line}: {message}"
+            else:
+                message = f"At line {start_line}: {message}"
+        super().__init__(message)
+        self.start_line = start_line
+        self.end_line = end_line """
+
+#---- meaning ----
+class TypeError_(StaticError):
+    """ if types does not match """
+    pass
+
+class ScopeError(StaticError):
+    """if variables is not defined/or defined more than once"""
+    pass
+#---- structure ----
+class CaseError(StaticError):
+    """if ID does not align with casing specification"""
+    pass
+class StructureError(StaticError):
+    """if well-formedness is not obtained"""
+    @classmethod
+    def duplicate_syntax_error(self, line: int | None = None): #line 68
+        super().__init__(f"Syntax choices has been defined more than once", line)
+
+    @classmethod
+    def language_specification_error(self, lang: str, line: int | None = None):
+        languages_list = ','.join(str(n) for n in LANGUAGES)
+        super().__init__(f"The specified language {lang} is not supported. Please provide one of the following specifications instead: {languages_list}", line) ## maybe implement so that it will be conditional (1, 2, or 3) ...
+
+    @classmethod
+    def case_specification_error(self, case: str, line: int | None = None):
+        cases_list = ','.join(str(n) for n in CASES)
+        super().__init__(f"The specified case {case} is not supported. Please provide one of the following specifications instead: {cases_list}", line)
+
+    @classmethod
+    def #line 79 (visit_start)
+
+
+
 
 # helper dataclass
 @dataclass
@@ -24,13 +69,16 @@ class SemanticsChecker:
     PRIMITIVES = {"boolean", "integer", "decimal", "string", "noType"}
     _NUM = {"integer", "decimal"}
     _ARITH = _NUM | {"string"}
+    LANGUAGES = {"EN", "DK"}
+    CASESTYLES = {"camelCase", "snake_case"}
 
     def __init__(self) -> None:
         self._vars: ChainMap[str, str] = ChainMap()
         self._funcs: Dict[str, FunctionSig] = {}
         self._current_ret: str | None = None
         self._in_global: bool = True
-        self._case_style: str = "camelCase"
+        self._configuration: {language: None, case_style: None}
+       # self._case_style: str = "camelCase"
         self._func_order: list[str] = []
         self._saw_syntax: bool = False
         self._in_expr_stmt: bool = False
@@ -64,12 +112,21 @@ class SemanticsChecker:
 
     # syntax header
     def visit_syntax(self, n: Tree):
-        if self._saw_syntax:
+        if self._saw_syntax: #where is this defined?
             raise StructureError("Duplicate syntax header")
         lang, case = n.children[0].value, n.children[1].value
-        if lang not in {"EN", "DK"}: raise StructureError("Unsupported language")
-        if case not in {"camelCase", "snake_case"}: raise StructureError("Unsupported case style")
-        self._case_style, self._saw_syntax = case, True
+
+        if lang in LANGUAGES:
+            self._configuration[language] = lang
+        else:
+            raise StructureError("Unsupported language")
+
+        if case in CASESTYLES:
+            self._configuration[case_style] = case
+        else:
+            raise StructureError("Unsupported case style")
+
+        self._saw_syntax = case, True
 
     # start
     def visit_start(self, n: Tree):
