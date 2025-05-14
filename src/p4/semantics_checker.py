@@ -12,8 +12,9 @@ class StaticError(Exception):
         super().__init__(message)
         self.line = line
 
-
             """
+            --- in case we want to capture more that one line ---
+            
             if end_line is not None:
                 message = f"At line {start_line}-{end_line}: {message}"
             else:
@@ -27,32 +28,51 @@ class TypeError_(StaticError):
     """ if types does not match """
     pass
 
+
 class ScopeError(StaticError):
     """if variables is not defined/or defined more than once"""
     pass
+
+
 #---- structure ----
 class CaseError(StaticError):
     """if ID does not align with casing specification"""
     pass
-class StructureError(StaticError):
+
+
+class StructureErrorCategory(StaticError):
     """if well-formedness is not obtained"""
-    @classmethod
-    def duplicate_syntax_error(self, line: int | None = None): #line 68
-        super().__init__(f"Syntax choices has been defined more than once", line)
+class DuplicateSyntaxError(StructureErrorCategory):
+    def __init__(self, line: int | None = None):
+        message = f"Syntax choices has been defined more than once."
+        super().__init__(message, line)
 
-    @classmethod
-    def language_specification_error(self, lang: str, line: int | None = None):
+class LanguageSpecificationError(StructureErrorCategory):
+    def __init__(self, lang: str, line: int | None = None):
         languages_list = ','.join(str(n) for n in LANGUAGES)
-        super().__init__(f"The specified language {lang} is not supported. Please provide one of the following specifications instead: {languages_list}", line) ## maybe implement so that it will be conditional (1, 2, or 3) ...
+        message = (f"The specified language {lang} is not supported. "
+                   f"Please provide one of the following languages instead: {languages_list}"
+                   )
+        super().__init__(message, line) ## maybe implement so that it will be conditional (1, 2, or 3) ...
 
-    @classmethod
-    def case_specification_error(self, case: str, line: int | None = None):
+class CaseSpecificationError(StructureErrorCategory):
+    def __init__(self, line: int | None = None):
         cases_list = ','.join(str(n) for n in CASES)
-        super().__init__(f"The specified case {case} is not supported. Please provide one of the following specifications instead: {cases_list}", line)
+        message = (f"The specified case {case} is not supported. "
+                   f"Please provide one of the following case styles instead: {cases_list}"
+                   )
+        super().__init__(message, line)
 
-    @classmethod
-    def #line 79 (visit_start)
+class TopLevelDefError(StructureErrorCategory):
+    def __init__(self, line: int | None = None):
+        # evt. switch or if else for hver mulig ting(??)
 
+
+
+        message = (f"Only syntax specifications and function definitions are allowed at top level. "
+                   f"Please define {name} somewhere else."
+                   )
+        super().__init__(message, line)
 
 
 
