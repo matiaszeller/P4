@@ -1,6 +1,6 @@
 import sys
 from lark.tree import pydot__tree_to_png
-from semantics_checker import SemanticsChecker
+#from semantics_checker import SemanticsChecker
 from src.p4.interpreter import Interpreter
 from src.p4.parse_tree_processor import extract_header, make_parser, ParseTreeProcessor
 
@@ -30,18 +30,18 @@ def main():
         print("Parsing error:", e)
         return
 
-    try:
-        SemanticsChecker().run(processed_tree)
-        print("Semantics checker passed")
-    except Exception as e:
-        print("Semantical analysis failed:", e)
-        return
-
-    try:
-        interpreter = Interpreter()
-        interpreter.visit(processed_tree)
-    except Exception as e:
-        print("Interpreter error:", e)
+#    try:
+#        SemanticsChecker().run(processed_tree)
+#        print("Semantics checker passed")
+#    except Exception as e:
+#        print("Semantical analysis failed:", e)
+#        return
+#
+#    try:
+#        interpreter = Interpreter()
+#        interpreter.visit(processed_tree)
+#    except Exception as e:
+#        print("Interpreter error:", e)
 
 if __name__ == "__main__":
     main()

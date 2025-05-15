@@ -1,28 +1,32 @@
+from dataclasses import dataclass
 from collections import ChainMap
 from typing import List, Dict
 from lark import Tree, Token
 
+
 # error hierarchy
 class StaticError(Exception):
     """ the form/base of all errors"""
+
     def __init__(self, message: str, line: int | None = None):
         if line is not None:
             message = f"At line {line}: {message}"
         super().__init__(message)
         self.line = line
 
-            """
-            --- in case we want to capture more that one line ---
-            
-            if end_line is not None:
-                message = f"At line {start_line}-{end_line}: {message}"
-            else:
-                message = f"At line {start_line}: {message}"
-        super().__init__(message)
-        self.start_line = start_line
-        self.end_line = end_line """
+        """
+        --- in case we want to capture more that one line ---
 
-#---- meaning ----
+        if end_line is not None:
+            message = f"At line {start_line}-{end_line}: {message}"
+        else:
+            message = f"At line {start_line}: {message}"
+    super().__init__(message)
+    self.start_line = start_line
+    self.end_line = end_line """
+
+
+# ---- meaning ----
 class TypeError_(StaticError):
     """ if types does not match """
     pass
@@ -33,7 +37,7 @@ class ScopeError(StaticError):
     pass
 
 
-#---- structure ----
+# ---- structure ----
 class CaseError(StaticError):
     """if ID does not align with casing specification"""
     pass
@@ -41,37 +45,43 @@ class CaseError(StaticError):
 
 class StructureErrorCategory(StaticError):
     """if well-formedness is not obtained"""
+
+
 class DuplicateSyntaxError(StructureErrorCategory):
     def __init__(self, line: int | None = None):
         message = f"Syntax choices has been defined more than once."
         super().__init__(message, line)
 
+
 class LanguageSpecificationError(StructureErrorCategory):
     def __init__(self, lang: str, line: int | None = None):
-        languages_list = ','.join(str(n) for n in LANGUAGES)
+        languages_list = ','.join(str(n) for n in self.LANGUAGES)
         message = (f"The specified language {lang} is not supported. "
                    f"Please provide one of the following languages instead: {languages_list}"
                    )
-        super().__init__(message, line) ## maybe implement so that it will be conditional (1, 2, or 3) ...
+        super().__init__(message, line)
 
 class CaseSpecificationError(StructureErrorCategory):
-    def __init__(self, line: int | None = None):
-        cases_list = ','.join(str(n) for n in CASES)
+    def __init__(self, case: str, line: int | None = None):
+        cases_list = ','.join(str(n) for n in self.CASESTYLES)
         message = (f"The specified case {case} is not supported. "
                    f"Please provide one of the following case styles instead: {cases_list}"
                    )
         super().__init__(message, line)
 
+
 class TopLevelDefError(StructureErrorCategory):
     def __init__(self, node, line: int | None = None):
         # evt. switch or if else for hver mulig ting(??)
         """ declaration_stmt, assignment_stmt, if_stmt, output_stmt, expr_stmt, input_stmt, content"""
-        type_ = node.children[1]
+        type_ = node.data
 
         if type_ == "declaration_stmt":
-            error_name  = "declaration"
+            name = node.children[1].value
+            error_name = f"declaration of {name}"
         elif type_ == "assignment_stmt":
-            error_name = "assignment"
+            name = node.children[0].children[0].value
+            error_name = f"assignment of {name}"
         elif type_ == "if_stmt":
             error_name = "if statement"
         elif type_ == "output_stmt":
@@ -80,12 +90,14 @@ class TopLevelDefError(StructureErrorCategory):
             error_name = "expression"
         elif type_ == "input_stmt":
             error_name = "input statement"
-        else: "content"
+        else:
+            error_name = "content"
 
         message = (f"Only syntax specifications and function definitions are allowed at top level. "
-                   f"The {type} at {line} must be defined within the scope of a function."
+                   f"The {error_name} at {line} must be defined within the scope of a function."
                    )
         super().__init__(message, line)
+
 
 class NestedFunctionsError(StructureErrorCategory):
     def __init__(self, name: str, line: int | None = None):
@@ -113,7 +125,7 @@ class SemanticsChecker:
         self._funcs: Dict[str, FunctionSig] = {}
         self._current_ret: str | None = None
         self._in_global: bool = True
-        self._configuration: {language: None, case_style: None}
+        self._configuration: {"language": None, "case_style": None}
        # self._case_style: str = "camelCase"
         self._func_order: list[str] = []
         self._saw_syntax: bool = False
@@ -149,18 +161,18 @@ class SemanticsChecker:
     # syntax header
     def visit_syntax(self, n: Tree):
         if self._saw_syntax: #where is this defined?
-            raise StructureError("Duplicate syntax header")
+            raise DuplicateSyntaxError(n.line)
         lang, case = n.children[0].value, n.children[1].value
 
-        if lang in LANGUAGES:
-            self._configuration[language] = lang
+        if lang in self.LANGUAGES:
+            self._configuration["language"] = lang
         else:
-            raise StructureError("Unsupported language")
+            raise LanguageSpecificationError(lang, n.line)
 
-        if case in CASESTYLES:
-            self._configuration[case_style] = case
+        if case in self.CASESTYLES:
+            self._configuration["case_style"] = case
         else:
-            raise StructureError("Unsupported case style")
+            raise CaseSpecificationError(case, n.line)
 
         self._saw_syntax = case, True
 
