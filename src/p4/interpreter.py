@@ -165,8 +165,8 @@ class Interpreter:
     def visit_output_stmt(self, node):
         print(self.visit(node.children[0]))
 
-    def visit_input_stmt(self, node):
-        return input()
+    def visit_input_expr(self, node):
+        return input().strip()
 
     ## Functions & Arrays
     def visit_function_definition(self, node):

@@ -3,6 +3,36 @@ class Environment:
         self.variables = {}
         self.functions = {}
 
+    # type helpers
+    def base(self, type_str):
+        return type_str.split("[")[0]
+
+    def coerce_scalar(self, value, type_str):
+        if not isinstance(value, str):
+            return value
+        base = self.base(type_str)
+        try:
+            if base == "integer":
+                return int(value)
+            if base == "decimal":
+                return float(value)
+            if base == "boolean":
+                if value.lower() in ("true", "1"):
+                    return True
+                if value.lower() in ("false", "0"):
+                    return False
+                raise ValueError
+            if base == "string":
+                return value
+        except ValueError:
+            raise TypeError(f"Cannot convert '{value}' to {base}")
+        raise TypeError(f"Unknown type '{base}'")
+
+    def coerce_any(self, val, type_str):
+        if isinstance(val, list):
+            return [self.coerce_any(v, type_str) for v in val]
+        return self.coerce_scalar(val, type_str)
+
     # variable handling
     def declare_variable(self, name, type, sizes=None):
         if name in self.variables:
@@ -10,15 +40,15 @@ class Environment:
         if sizes is None:
             sizes = []
         self.variables[name] = {
-            'value': self._make_array(sizes),
+            'value': self.make_array(sizes),
             'type': type,
             'sizes': sizes
         }
 
-    def _make_array(self, sizes, depth=0):
+    def make_array(self, sizes, depth=0):
         if depth == len(sizes):
             return None
-        return [self._make_array(sizes, depth + 1) for _ in range(sizes[depth])]
+        return [self.make_array(sizes, depth + 1) for _ in range(sizes[depth])]
 
     def get_variable(self, name, array_index=None):
         if name not in self.variables:
@@ -38,23 +68,24 @@ class Environment:
             value = value[idx]
         return value
 
-    # assignment with shape checking
+    # assignment with shape checking + coercion
     def set_variable(self, name, value, array_index=None):
         if name not in self.variables:
             raise NameError(f'Variable {name} is not defined')
 
         var   = self.variables[name]
         sizes = var['sizes']
+        value = self.coerce_any(value, var['type'])
 
         # whole-variable assignment
         if array_index is None:
-            if self._get_dimensions(value) != len(sizes):
+            if self.get_dimensions(value) != len(sizes):
                 raise ValueError(
-                    f'Expected {len(sizes)}-D value for {name}, got {self._get_dimensions(value)}-D'
+                    f'Expected {len(sizes)}-D value for {name}, got {self.get_dimensions(value)}-D'
                 )
-            if sizes and not self._shape_matches(value, sizes):
+            if sizes and not self.shape_matches(value, sizes):
                 raise ValueError(
-                    f'Array shape {self._shape(value)} does not match declared sizes {tuple(sizes)} for {name}'
+                    f'Array shape {self.shape(value)} does not match declared sizes {tuple(sizes)} for {name}'
                 )
             var['value'] = value
             return
@@ -72,7 +103,7 @@ class Environment:
         last_idx = array_index[-1]
         if last_idx >= sizes[len(array_index) - 1]:
             raise IndexError(f'Array index {last_idx} out of range')
-        tgt[last_idx] = value
+        tgt[last_idx] = self.coerce_scalar(value, var['type'])
 
     # function handling
     def declare_function(self, name, return_type, block, parameters=None):
@@ -91,7 +122,7 @@ class Environment:
         return self.functions[name]
 
     # helpers
-    def _get_dimensions(self, value):
+    def get_dimensions(self, value):
         depth = 0
         while isinstance(value, list):
             if not value:
@@ -100,21 +131,19 @@ class Environment:
             value = value[0]
         return depth
 
-    def _shape(self, value):
-        # returns a tuple with the length of every nested list
+    def shape(self, value):
         if not isinstance(value, list):
             return ()
         if len(value) == 0:
             return (0,)
-        inner = self._shape(value[0])
+        inner = self.shape(value[0])
         return (len(value),) + inner
 
-    def _shape_matches(self, value, sizes):
-        # recursively compare every dimension
+    def shape_matches(self, value, sizes):
         if not sizes:
             return not isinstance(value, list)
         if not isinstance(value, list):
             return False
         if len(value) != sizes[0]:
             return False
-        return all(self._shape_matches(v, sizes[1:]) for v in value)
+        return all(self.shape_matches(v, sizes[1:]) for v in value)

@@ -1,15 +1,17 @@
 Language EN
 Case camelCase
 
-function integer makeArray(integer x) {
-    x = 3
-    new integer arr[x][5]
-    arr[0][0] = 1
-    return arr
-}
-
 function noType main() {
-    new integer y = 3
-    new integer test[3][5] = makeArray(y)
-    output test
+    new integer t
+    new string f
+    new boolean g
+    new decimal o
+    t = input
+    output t
+    f = input
+    output f
+    g = input
+    output g
+    o = input
+    output o
 }
