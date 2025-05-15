@@ -2,16 +2,16 @@ Language EN
 Case camelCase
 
 function noType main() {
-    new integer t
-    new string f
-    new boolean g
-    new decimal o
-    t = input
-    output t
-    f = input
-    output f
-    g = input
-    output g
-    o = input
-    output o
+    new integer a
+    new string b
+    new boolean c
+    new decimal d
+    a = input
+    output a
+    b = input
+    output b
+    c = input
+    output c
+    d = input
+    output d
 }

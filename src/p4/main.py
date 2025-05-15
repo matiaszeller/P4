@@ -2,7 +2,7 @@ import sys
 from lark.tree import pydot__tree_to_png
 from semantics_checker import SemanticsChecker
 from src.p4.interpreter import Interpreter
-from src.p4.parse_tree_processor import extract_header, make_parser, ParseTreeProcessor
+from src.p4.parse_tree_processor import extract_language, make_parser, ParseTreeProcessor
 
 def main():
     source_file = sys.argv[1] if len(sys.argv) > 1 else "sample.txt"
@@ -15,7 +15,7 @@ def main():
         return
 
     try:
-        lang, _ = extract_header(sample_input)
+        lang = extract_language(sample_input)
         parser = make_parser(lang)
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()

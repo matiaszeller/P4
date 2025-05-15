@@ -45,16 +45,12 @@ TYPE_MAP = {
 
 BASE_GRAMMAR = Path("grammar/grammar.lark").read_text(encoding="utf-8")
 
-HEADER_RE = re.compile(
-    r"^Language\s+(?P<lang>EN|DK)\s*\nCase\s+(?P<case>camelCase|snake_case)",
-    re.IGNORECASE,
-)
+HEADER_RE = re.compile(r"^Language\s+(EN|DK)\s*$", re.IGNORECASE)
 
-def extract_header(src: str) -> Tuple[str, str]:
-    m = HEADER_RE.match(src)
-    if not m:
-        raise ValueError("first two lines must be 'Language …' and 'Case …'")
-    return m.group("lang"), m.group("case")
+def extract_language(src: str) -> str:
+    first_line = src.lstrip().splitlines()[0]
+    m = HEADER_RE.match(first_line)
+    return m.group(1)
 
 def make_parser(lang: str) -> Lark:
     try:
@@ -63,9 +59,7 @@ def make_parser(lang: str) -> Lark:
     except KeyError:
         raise ValueError(f"Unsupported language {lang}")
 
-    injected_keywords = "\n".join(
-        f'_{name}: "{literal}"' for name, literal in kw_map.items()
-    )
+    injected_keywords = "\n".join(f'_{n}: "{lit}"' for n, lit in kw_map.items())
 
     grammar = (
         BASE_GRAMMAR
@@ -73,7 +67,6 @@ def make_parser(lang: str) -> Lark:
         + "\n\n"
         + injected_keywords
     )
-
     return Lark(grammar, start="start", parser="earley", lexer="dynamic")
 
 class ParseTreeProcessor(Transformer):
