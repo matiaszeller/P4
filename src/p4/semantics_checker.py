@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from collections import ChainMap
 from typing import List, Dict
 from lark import Tree, Token
@@ -66,7 +65,9 @@ class CaseSpecificationError(StructureErrorCategory):
 class TopLevelDefError(StructureErrorCategory):
     def __init__(self, line: int | None = None):
         # evt. switch or if else for hver mulig ting(??)
-
+        """ declaration_stmt, assignment_stmt, if_stmt, output_stmt, expr_stmt, input_stmt, content"""
+        if name == 'declaration_stmt':
+            error_name  =
 
 
         message = (f"Only syntax specifications and function definitions are allowed at top level. "
