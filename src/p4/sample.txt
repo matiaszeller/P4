@@ -1,42 +1,17 @@
 Language EN
 Case camelCase
 
-function integer add() {
-    new integer result = 0
-    result = 2 + 3 * 4
-    output result
-    return result
+function integer array(){
+    new integer array[5]
+    array[0] = 1
+
+    return array
 }
 
 function noType main() {
-    # Test declaration and assignment #
-    new integer a
-    a = 10
-    output a
-
-    # Test array declaration and nested assignment #
-    new integer matrix[][]
-    matrix[0][0] = 5
-    matrix[1][2] = 15
-    output matrix[0][0]
-    output matrix[1][2]
-    output matrix[1][1]
-
-    # Test loop #
-    new integer i = 0
-    while i < 3 do {
-        output i
-        i = i + 1
-    }
-
-    # Test if-else #
-    if a > 5 then {
-        output 100
-    } else {
-        output 200
-    }
-
-    # Call function #
-    new integer sum = add()
-    output sum
+    new integer matrix[10]
+    matrix[9] = 5
+    test = array()
+    output test
+    output matrix
 }

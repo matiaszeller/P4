@@ -3,67 +3,66 @@ class Environment:
         self.variables = {}
         self.functions = {}
 
-    def declare_variable(self, name, type, array_depth=0):
+    def declare_variable(self, name, type, sizes=None):
         if name in self.variables:
             raise NameError(f'Variable {name} already exists')
+        if sizes is None:
+            sizes = []
         self.variables[name] = {
-            'value': None,
+            'value': self._make_array(sizes),
             'type': type,
-            'arrayDepth': array_depth
+            'sizes': sizes
         }
-        # create a single-slot placeholder for each dimension
-        for _ in range(array_depth):
-            self.variables[name]['value'] = [self.variables[name]['value']]
 
-    def ensure_length(self, lst, index, fill):
-        # grow list so that index is valid
-        while len(lst) <= index:
-            lst.append(fill)
+    def _make_array(self, sizes, depth=0):
+        if depth == len(sizes):
+            return None
+        return [self._make_array(sizes, depth + 1) for _ in range(sizes[depth])]
 
     def get_variable(self, name, array_index=None):
         if name not in self.variables:
             raise NameError(f'Variable {name} is not defined')
-        target = self.variables[name]['value']
+        var = self.variables[name]
+        value = var['value']
 
-        if array_index is not None:
-            for i in array_index:
-                if not isinstance(target, list):
-                    raise TypeError(f'Cannot index into non-list value: {target}')
-                if i >= len(target):
-                    raise IndexError(f'Array index {i} out of range')
-                target = target[i]
+        if array_index is None:
+            return value
 
-        return target
+        if len(array_index) > len(var['sizes']):
+            raise IndexError('Too many indices for array')
+
+        for depth, idx in enumerate(array_index):
+            if idx >= var['sizes'][depth]:
+                raise IndexError(f'Array index {idx} out of range')
+            value = value[idx]
+        return value
 
     def set_variable(self, name, value, array_index=None):
         if name not in self.variables:
             raise NameError(f'Variable {name} is not defined')
 
-        variable_data = self.variables[name]
-        variable_dimension = variable_data['arrayDepth']
-        value_dimension = self._get_dimensions(value)
-        index_dimension = len(array_index) if array_index is not None else 0
+        var = self.variables[name]
+        sizes = var['sizes']
 
-        if value_dimension + index_dimension != variable_dimension:
-            raise ValueError(f'Value {value} has wrong dimension, expected {variable_dimension - index_dimension}')
-
-        # scalar assignment
-        if index_dimension == 0:
-            variable_data['value'] = value
+        if array_index is None:
+            if self._get_dimensions(value) != len(sizes):
+                raise ValueError(f'Value {value} has wrong dimension, expected {len(sizes)}')
+            var['value'] = value
             return
 
-        # indexed assignment (auto-extend lists if needed)
-        target = variable_data['value']
+        if len(array_index) > len(sizes):
+            raise IndexError('Too many indices for array')
+
+        tgt = var['value']
         for depth, idx in enumerate(array_index[:-1]):
-            self.ensure_length(target, idx, [])
-            if target[idx] is None:
-                # create next level list placeholder
-                target[idx] = []
-            target = target[idx]
+            if idx >= sizes[depth]:
+                raise IndexError(f'Array index {idx} out of range')
+            tgt = tgt[idx]
 
         last_idx = array_index[-1]
-        self.ensure_length(target, last_idx, None)
-        target[last_idx] = value
+        if last_idx >= sizes[len(array_index) - 1]:
+            raise IndexError(f'Array index {last_idx} out of range')
+        tgt[last_idx] = value
 
     def declare_function(self, name, return_type, block, parameters=None):
         if name in self.functions:
@@ -84,7 +83,7 @@ class Environment:
         depth = 0
         while isinstance(value, list):
             if not value:
-                return depth
+                return depth + 1
             depth += 1
             value = value[0]
         return depth

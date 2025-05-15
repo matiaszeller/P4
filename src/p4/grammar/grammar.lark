@@ -56,7 +56,7 @@ array_literal: "[" [array_elements] "]"
 array_elements: expr ("," expr)*
 params: param ("," param)*
 param: TYPE ID array_suffix?
-array_suffix: "[" "]"
+array_suffix: "[" INT "]"
 
 TYPE: "boolean" | "integer" | "decimal" | "string" | "noType"
 LANG: "DK" | "EN"

@@ -150,6 +150,9 @@ class ParseTreeProcessor(Transformer):
     def array_access_suffix(self, items):
         return Tree('array_access_suffix', items)
 
+    def array_suffix(self, items):
+        return Tree('array_suffix', items)
+
     def expr(self, items):
         return items[0]
 

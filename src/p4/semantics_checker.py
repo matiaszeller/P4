@@ -147,66 +147,92 @@ class SemanticsChecker:
     def visit_declaration_stmt(self, n: Tree):
         base = n.children[0].value
         name = n.children[1].value
+        sizes, idx = self._collect_sizes(n.children, 2)
+
         self.check_case(name)
         self.shadow_check(name)
 
-        # Count [] suffixes to build full array type
-        index = 2
-        dimensions = 0
-        while index < len(n.children) and isinstance(n.children[index], Tree) and n.children[index].data == "array_suffix":
-            dimensions += 1
-            index += 1
-        declared_type = base + "[]" * dimensions
+        declared_type = base + "[]" * len(sizes)
 
-        # Detect optional initializer
         right_hand_side_node = None
-        if index < len(n.children):
-            child = n.children[index]
-            # Either '=' token or the expression directly if '=' omitted in parse tree
-            right_hand_side_node = n.children[index + 1] if isinstance(child, Token) and child.value == "=" else child
-            # Grammar sometimes wraps expression list in another list; unwrap if so
+        if idx < len(n.children):
+            child = n.children[idx]
+            right_hand_side_node = n.children[idx + 1] if isinstance(child, Token) and child.value == "=" else child
             if isinstance(right_hand_side_node, list):
                 right_hand_side_node = right_hand_side_node[0] if right_hand_side_node else None
 
-        # Type check initializer
         if right_hand_side_node is not None:
             right_hand_side_type = self.visit(right_hand_side_node)
             if right_hand_side_type == "noType" and not self.is_input_expr(right_hand_side_node):
                 raise TypeError_("Cannot initialize with value of noType")
             if right_hand_side_type != declared_type and right_hand_side_type != "noType":
                 raise TypeError_(f"Initializer type mismatch for '{name}'")
+            if sizes and isinstance(right_hand_side_node, Tree) and right_hand_side_node.data == "array_literal":
+                literal_elems = [
+                    elem for elem in right_hand_side_node.children[0].children
+                    if not (isinstance(elem, Token) and elem.value == ",")
+                ]
+                if len(literal_elems) != sizes[0]:
+                    raise TypeError_(f"Initializer size mismatch for '{name}'")
 
-        self.variable_map[name] = declared_type  # Enter binding into current scope
+        self.variable_map[name] = declared_type
 
     # assignments
     def visit_assignment_stmt(self, n: Tree):
         left_value = n.children[0]
         right_hand_side_node = n.children[-1]
 
+        # identifier being assigned to
         name = left_value.children[0].value
         if name not in self.variable_map:
             raise ScopeError(f"Variable '{name}' not declared")
-        variable_type = self.variable_map[name]
 
-        # Collect all array index suffixes to know how deep we dereference
-        indices = [c for c in left_value.children[1:] if c.data == "array_access_suffix"]
-        for suf in indices:
-            if self.visit(suf.children[0]) != "integer":
+        var_info = self.variable_map[name]
+        # two possible representations: a plain "integer[][]" string or
+        # the (element_type, sizes) tuple used when fixed-length info is kept
+        if isinstance(var_info, tuple):
+            element_base, sizes = var_info  # sizes is a list[int]
+            full_type = element_base + "[]" * len(sizes)
+            declared_dims = len(sizes)
+        else:
+            sizes = None
+            full_type = var_info  # e.g. "integer[][]"
+            declared_dims = full_type.count("[]")
+            # derive element_base by stripping all dimensions
+            element_base = full_type.rstrip("[]")
+            if element_base.endswith("]"):  # just in case of uneven strip
+                element_base = element_base[:element_base.rfind('[')]
+
+        # collect every indexing suffix
+        indices = [suf for suf in left_value.children[1:] if
+                   isinstance(suf, Tree) and suf.data == "array_access_suffix"]
+
+        # basic type-check on each index expression + optional const-bound check
+        for dim, suf in enumerate(indices):
+            idx_node = suf.children[0]
+            if self.visit(idx_node) != "integer":
                 raise TypeError_("Array index must be integer")
+            if sizes is not None and isinstance(idx_node, Token) and idx_node.type == "INT":
+                if int(idx_node) >= sizes[dim]:
+                    raise TypeError_("Index out of bounds at compile-time")
+
+        # too many indices?
+        if len(indices) > declared_dims:
+            raise TypeError_("Too many indices for array")
 
         right_hand_side_type = self.visit(right_hand_side_node)
         if right_hand_side_type == "noType" and not self.is_input_expr(right_hand_side_node):
             raise TypeError_("Cannot assign value of noType")
 
-        if indices:  # Assignment to an element inside an array
-            if variable_type.count("[]") < len(indices):
-                raise TypeError_("Too many indices for array")
-            element_type = variable_type[:-2 * len(indices)]  # Strip one dimension per index
-            if right_hand_side_type != element_type and right_hand_side_type != "noType":
-                raise TypeError_("Assignment type mismatch")
-        else:  # Assignment to whole variable
-            if right_hand_side_type != variable_type and right_hand_side_type != "noType":
-                raise TypeError_("Assignment type mismatch")
+        # determine the expected type after applying the indices
+        remaining_dims = declared_dims - len(indices)
+        expected_type = (
+            element_base if remaining_dims == 0
+            else element_base + "[]" * remaining_dims
+        )
+
+        if right_hand_side_type not in {expected_type, "noType"}:
+            raise TypeError_("Assignment type mismatch")
 
     # control flow
     def visit_if_stmt(self, n: Tree):
@@ -417,3 +443,14 @@ class SemanticsChecker:
             # Both branches must guarantee return
             return then_ok and else_ok
         return False  # while, expressions, etc. do not guarantee return
+
+    # helper for array indexing
+    def _collect_sizes(self, children, start):
+        sizes = []
+        i = start
+        while i < len(children) and isinstance(children[i], Tree) \
+                and children[i].data == "array_suffix":
+            size_tok = children[i].children[0]
+            sizes.append(int(size_tok))
+            i += 1
+        return sizes, i
