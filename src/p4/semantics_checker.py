@@ -3,7 +3,13 @@ from collections import ChainMap
 from typing import List, Dict
 from lark import Tree, Token
 
-
+class BasicValues:
+    # primitive sets
+    PRIMITIVES = {"boolean", "integer", "decimal", "string", "noType"}
+    _NUM = {"integer", "decimal"}
+    _ARITH = _NUM | {"string"}
+    LANGUAGES = {"EN", "DK"}
+    CASESTYLES = {"camelCase", "snake_case"}
 # error hierarchy
 class StaticError(Exception):
     """ the form/base of all errors"""
@@ -55,7 +61,7 @@ class DuplicateSyntaxError(StructureErrorCategory):
 
 class LanguageSpecificationError(StructureErrorCategory):
     def __init__(self, lang: str, line: int | None = None):
-        languages_list = ','.join(str(n) for n in self.LANGUAGES)
+        languages_list = ','.join(str(n) for n in BasicValues.LANGUAGES)
         message = (f"The specified language {lang} is not supported. "
                    f"Please provide one of the following languages instead: {languages_list}"
                    )
@@ -63,7 +69,7 @@ class LanguageSpecificationError(StructureErrorCategory):
 
 class CaseSpecificationError(StructureErrorCategory):
     def __init__(self, case: str, line: int | None = None):
-        cases_list = ','.join(str(n) for n in self.CASESTYLES)
+        cases_list = ','.join(str(n) for n in BasicValues.CASESTYLES)
         message = (f"The specified case {case} is not supported. "
                    f"Please provide one of the following case styles instead: {cases_list}"
                    )
@@ -113,12 +119,6 @@ class FunctionSig:
 
 # static semantics checker
 class SemanticsChecker:
-    # primitive sets
-    PRIMITIVES = {"boolean", "integer", "decimal", "string", "noType"}
-    _NUM = {"integer", "decimal"}
-    _ARITH = _NUM | {"string"}
-    LANGUAGES = {"EN", "DK"}
-    CASESTYLES = {"camelCase", "snake_case"}
 
     def __init__(self) -> None:
         self._vars: ChainMap[str, str] = ChainMap()
@@ -159,17 +159,17 @@ class SemanticsChecker:
         return None
 
     # syntax header
-    def visit_syntax(self, n: Tree):
+    def visit_syntax(self, node: Tree):
         if self._saw_syntax: #where is this defined?
-            raise DuplicateSyntaxError(n.line)
-        lang, case = n.children[0].value, n.children[1].value
+            raise DuplicateSyntaxError(node.line)
+        lang, case = node.children[0].value, node.children[1].value
 
-        if lang in self.LANGUAGES:
+        if lang in BasicValues.LANGUAGES:
             self._configuration["language"] = lang
         else:
             raise LanguageSpecificationError(lang, n.line)
 
-        if case in self.CASESTYLES:
+        if case in BasicValues.CASESTYLES:
             self._configuration["case_style"] = case
         else:
             raise CaseSpecificationError(case, n.line)
@@ -177,15 +177,17 @@ class SemanticsChecker:
         self._saw_syntax = case, True
 
     # start
-    def visit_start(self, n: Tree):
-        for ch in n.children:
-            self._walk(ch)
-            if isinstance(ch, Tree) and ch.data not in {"syntax", "function_definition"}:
-                raise StructureError("Only function definitions allowed at top level")
+    def visit_start(self, node: Tree):
+        for child in node.children:
+            self._walk(child)
+            if isinstance(child, Tree) and child.data not in {"syntax", "function_definition"}:
+                raise TopLevelDefError(child, node.line)
 
     # functions
-    def visit_function_definition(self, n: Tree):
+    def visit_function_definition(self, node: Tree):
+        # what semantice rule? none?
         if not self._in_global: raise StructureError("Nested functions not allowed")
+
         ret_t, fname = n.children[0].value, n.children[1].value
         params_node = next((c for c in n.children if isinstance(c, Tree) and c.data == "params"), None)
         body = n.children[-1]
