@@ -56,9 +56,9 @@ array_literal: "[" [array_elements] "]"
 array_elements: expr ("," expr)*
 params: param ("," param)*
 param: TYPE ID array_suffix?
-array_suffix: "[" INT "]"
+array_suffix : "[" (INT | ID) "]"
 
-TYPE: "boolean" | "integer" | "decimal" | "string" | "noType"
+TYPE: __TYPE_ALTS__
 LANG: "DK" | "EN"
 CASE: "camelCase" | "snake_case"
 STRING: /"([^"\\]*(\\.[^"\\]*)*)"/

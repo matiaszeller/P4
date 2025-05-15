@@ -19,8 +19,6 @@ class FunctionSig:
 
 # static semantics checker
 class SemanticsChecker:
-    # primitive sets
-    PRIMITIVES = {"boolean", "integer", "decimal", "string", "noType"}  # All built-in types
     _NUM = {"integer", "decimal"}  # Numeric types allowed in arithmetic
     _ARITH = _NUM | {"string"}  # Types that support '+'
 
@@ -28,11 +26,10 @@ class SemanticsChecker:
         self.variable_map: ChainMap[str, str] = ChainMap()  # Stack of lexical scopes
         self.function_map: Dict[str, FunctionSig] = {}  # Registry of all functions
         self.current_return_type: str | None = None  # Expected return type in the current function
-        self.in_global_scope: bool = True  # True until we descend into the first function body
         self.case_style: str = "camelCase"  # Active identifier style, set by syntax header
         self.function_order: list[str] = []  # Definition order, used to enforce 'main' last
-        self.saw_syntax: bool = False  # Guards against multiple syntax headers
         self.in_expr_stmt: bool = False  # Suppresses "void value" error in expression statements
+        self.seen_returns: list[str] = []
 
     # main entry
     def run(self, tree: Tree) -> None:
@@ -69,28 +66,18 @@ class SemanticsChecker:
 
     # syntax header
     def visit_syntax(self, n: Tree):
-        if self.saw_syntax:  # Only one header allowed
-            raise StructureError("Duplicate syntax header")
-        language = n.children[0].value
         case = n.children[1].value
-        if language not in {"EN", "DK"}: raise StructureError("Unsupported language")
-        if case not in {"camelCase", "snake_case"}: raise StructureError("Unsupported case style")
         self.case_style = case
-        self.saw_syntax = True
 
     # start symbol
     def visit_start(self, n: Tree):
         for child in n.children:
             self.visit(child)
-            # After syntax header, only function definitions are legal at top level
-            if isinstance(child, Tree) and child.data not in {"syntax", "function_definition"}:
-                raise StructureError("Only function definitions allowed at top level")
 
     # functions
     def visit_function_definition(self, n: Tree):
-        if not self.in_global_scope: raise StructureError("Nested functions not allowed")
 
-        return_type, ret_sizes, pos = self._get_type_with_suffixes(n.children, 0)
+        return_type = self.get_base_type(n.children, 0)
         function_name = n.children[1].value
         parameters_node = None  # look for a child node representing parameter declarations
         for child in n.children:
@@ -119,12 +106,17 @@ class SemanticsChecker:
         # Save outer context, then push new scope for parameters
         outer_vars = self.variable_map
         outer_return_type = self.current_return_type
-        outer_flag = self.in_global_scope
 
         self.variable_map = ChainMap(dict(zip(parameter_names, parameter_types)))
         self.current_return_type = return_type
-        self.in_global_scope = False
+        self.seen_returns = []
         self.visit(body)
+
+        if self.seen_returns:  # no returns for noType functions
+            inferred = self.seen_returns[0]
+            if all(t == inferred for t in self.seen_returns):
+                # replace the published type with the more specific one
+                self.function_map[function_name].return_type = inferred
 
         # Non-void functions must guarantee a return on every path
         if return_type != "noType" and not self.body_guarantees_return(body):
@@ -133,7 +125,6 @@ class SemanticsChecker:
         # Restore outer context
         self.variable_map = outer_vars
         self.current_return_type = outer_return_type
-        self.in_global_scope = outer_flag
 
         self.check_single_return(body)  # Enforce at most one return per branch
 
@@ -147,7 +138,7 @@ class SemanticsChecker:
     def visit_declaration_stmt(self, n: Tree):
         base = n.children[0].value
         name = n.children[1].value
-        sizes, idx = self._collect_sizes(n.children, 2)
+        sizes, idx = self.collect_sizes(n.children, 2)
 
         self.check_case(name)
         self.shadow_check(name)
@@ -187,21 +178,10 @@ class SemanticsChecker:
         if name not in self.variable_map:
             raise ScopeError(f"Variable '{name}' not declared")
 
-        var_info = self.variable_map[name]
-        # two possible representations: a plain "integer[][]" string or
-        # the (element_type, sizes) tuple used when fixed-length info is kept
-        if isinstance(var_info, tuple):
-            element_base, sizes = var_info  # sizes is a list[int]
-            full_type = element_base + "[]" * len(sizes)
-            declared_dims = len(sizes)
-        else:
-            sizes = None
-            full_type = var_info  # e.g. "integer[][]"
-            declared_dims = full_type.count("[]")
-            # derive element_base by stripping all dimensions
-            element_base = full_type.rstrip("[]")
-            if element_base.endswith("]"):  # just in case of uneven strip
-                element_base = element_base[:element_base.rfind('[')]
+        full_type = self.variable_map[name]
+        declared_dims = full_type.count("[]")
+        element_base = full_type.rstrip("[]")
+        sizes = None
 
         # collect every indexing suffix
         indices = [suf for suf in left_value.children[1:] if
@@ -212,9 +192,12 @@ class SemanticsChecker:
             idx_node = suf.children[0]
             if self.visit(idx_node) != "integer":
                 raise TypeError_("Array index must be integer")
-            if sizes is not None and isinstance(idx_node, Token) and idx_node.type == "INT":
-                if int(idx_node) >= sizes[dim]:
-                    raise TypeError_("Index out of bounds at compile-time")
+
+            # constant-bound check
+            if sizes and sizes[dim] is not None \
+                    and isinstance(idx_node, Token) and idx_node.type == "INT" \
+                    and int(idx_node) >= sizes[dim]:
+                raise TypeError_("Index out of bounds at compile time")
 
         # too many indices?
         if len(indices) > declared_dims:
@@ -250,9 +233,12 @@ class SemanticsChecker:
     def visit_return_stmt(self, n: Tree):
         if self.current_return_type is None:
             raise StructureError("return outside function")
-        expression_type = self.visit(n.children[0])
-        if expression_type not in {self.current_return_type, "noType"}:
+
+        actual = self.visit(n.children[0])
+        if not self.compatible(actual, self.current_return_type):
             raise TypeError_("Return type mismatch")
+
+        self.seen_returns.append(actual)
 
     # expression statement
     def visit_expr_stmt(self, n: Tree):
@@ -375,6 +361,7 @@ class SemanticsChecker:
     def visit_input_expr(self, _):
         return "noType"  # Represents read-from-stdin; has no concrete type
 
+    # helpers below
     # identifier case enforcement
     def check_case(self, name: str):
         if self.case_style == "camelCase":
@@ -393,8 +380,6 @@ class SemanticsChecker:
 
     # global checks
     def post_checks(self):
-        if not self.saw_syntax:
-            raise StructureError("missing syntax header")
         # Exactly one main, and it must be last
         has_main = self.function_order.count("main") == 1  # check there is exactly one 'main'
         is_last = bool(self.function_order) and self.function_order[-1] == "main"  # check 'main' is the last element
@@ -444,18 +429,31 @@ class SemanticsChecker:
             return then_ok and else_ok
         return False  # while, expressions, etc. do not guarantee return
 
-    # helper for array indexing
-    def _collect_sizes(self, children, start):
+    def collect_sizes(self, children, start):
         sizes = []
         i = start
-        while i < len(children) and isinstance(children[i], Tree) \
+        while i < len(children) \
+                and isinstance(children[i], Tree) \
                 and children[i].data == "array_suffix":
-            size_tok = children[i].children[0]
-            sizes.append(int(size_tok))
+
+            token = children[i].children[0]
+            if token.type == "INT":
+                sizes.append(int(token))
+            else:
+                sizes.append(None)
             i += 1
         return sizes, i
 
-    def _get_type_with_suffixes(self, children, idx0):
-        base = children[idx0].value
-        sizes, next_idx = self._collect_sizes(children, idx0 + 1)
-        return base + "[]" * len(sizes), sizes, next_idx
+    def get_base_type(self, children, idx0):
+        return children[idx0].value
+
+    def compatible(self, actual: str, expected: str) -> bool:
+        if expected == "noType":
+            return True
+        if actual == expected:
+            return True
+        while actual.endswith("[]"):
+            actual = actual[:-2]
+            if actual == expected:
+                return True
+        return False

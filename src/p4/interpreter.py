@@ -6,18 +6,6 @@ class Interpreter:
     def __init__(self):
         self.env = Environment()
 
-    def _collect_sizes(self, children, start):
-        sizes = []
-        i = start
-        while (
-            i < len(children)
-            and isinstance(children[i], Tree)
-            and children[i].data == "array_suffix"
-        ):
-            sizes.append(int(children[i].children[0]))
-            i += 1
-        return sizes, i
-
     # Recursive logic for visits
     def visit(self, node):
         if isinstance(node, Tree):
@@ -131,7 +119,7 @@ class Interpreter:
     def visit_declaration_stmt(self, node):
         type_tok = node.children[0]
         name_tok = node.children[1]
-        sizes, idx = self._collect_sizes(node.children, 2)
+        sizes, idx = self.collect_sizes(node.children, 2)
         has_value = idx < len(node.children)
         self.env.declare_variable(name_tok.value, type_tok.value, sizes)
         if has_value:
@@ -214,7 +202,7 @@ class Interpreter:
                     param = meta["parameters"].children[i]
                     param_name = param.children[1].value
                     param_type = param.children[0].value
-                    param_sizes, _ = self._collect_sizes(param.children, 2)
+                    param_sizes, _ = self.collect_sizes(param.children, 2)
                     function_interpreter.env.declare_variable(
                         param_name, param_type, param_sizes
                     )
@@ -249,10 +237,10 @@ class Interpreter:
         print(f"You are programming in {node.children[0]} using {node.children[1]}\n")
 
     ## Helper Functions
-    def hasValue(self, node):
+    def has_value(self, node):
         return not (isinstance(node, Tree) and node.data == "array_suffix")
 
-    def isArray(self, node):
+    def is_array(self, node):
         try:
             if node.children[2].data == "array_suffix":
                 return True
@@ -261,7 +249,23 @@ class Interpreter:
         except (IndexError, AttributeError):
             return False
 
-    def _get_type_with_suffixes(self, children, idx0):
+    def get_type_with_suffixes(self, children, idx0):
         base = children[idx0].value
-        sizes, next_idx = self._collect_sizes(children, idx0 + 1)
+        sizes, next_idx = self.collect_sizes(children, idx0 + 1)
         return base + "[]" * len(sizes), sizes, next_idx
+
+    def collect_sizes(self, children, start):
+        sizes = []
+        i = start
+        while (
+            i < len(children)
+            and isinstance(children[i], Tree)
+            and children[i].data == "array_suffix"
+        ):
+            expr_node = children[i].children[0]       # INT, ID, or expr
+            size_val = self.visit(expr_node)          # run-time evaluation
+            if not isinstance(size_val, int):
+                raise Exception("Array size must evaluate to an integer")
+            sizes.append(size_val)
+            i += 1
+        return sizes, i
