@@ -63,5 +63,11 @@ LANG: "DK" | "EN"
 CASE: "camelCase" | "snake_case"
 STRING: /"([^"\\]*(\\.[^"\\]*)*)"/
 BOOLEAN: "true" | "false"
-ID: /(?!(true|false|if|else|while|return|function|input|output|then|do)\b)[a-zæøå][a-zA-ZæøåÆØÅ0-9]*(?:_[a-zA-ZæøåÆØÅ0-9]+)*/
+ID: /(?!(true|false
+        |function|new|if|then|else|while|do|return|output|input
+        |funktion|ny|hvis|så|ellers|mens|gør|returner|udskriv|indskriv
+        |boolean|integer|decimal|string|noType
+        |heltal|kommatal|tekst|ingenType)\b)
+      [a-zæøå][a-zA-ZæøåÆØÅ0-9]*
+      (?:_[a-zA-ZæøåÆØÅ0-9]+)*/x
 COMMENT: /[ \t]*#[^\n]*#?\r?\n/

@@ -1,17 +1,17 @@
-Language EN
+Language DK
 Case camelCase
 
-function noType main() {
-    new integer a
-    new string b
-    new boolean c
-    new decimal d
-    a = input
-    output a
-    b = input
-    output b
-    c = input
-    output c
-    d = input
-    output d
+funktion ingenType main() {
+    ny heltal a
+    ny tekst b
+    ny boolean c
+    ny kommatal d
+    a = indskriv
+    udskriv a
+    b = indskriv
+    udskriv b
+    c = indskriv
+    udskriv c
+    d = indskriv
+    udskriv d
 }

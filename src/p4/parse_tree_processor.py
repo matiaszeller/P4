@@ -25,22 +25,22 @@ KEYWORDS = {
         WHILE="mens",
         DO="gør",
         RETURN="returner",
-        OUTPUT="skriv",
-        INPUT="indlæs",
+        OUTPUT="udskriv",
+        INPUT="indskriv",
     ),
 }
 
 # language-specific literal list for the TYPE token
 TYPE_ALTS = {
     "EN": '"boolean" | "integer" | "decimal" | "string" | "noType"',
-    "DK": '"boolean" | "heltal" | "kommatal" | "tekst" | "typeløs"',
+    "DK": '"boolean" | "heltal" | "kommatal" | "tekst" | "ingenType"',
 }
 
 TYPE_MAP = {
-    "heltal":   "integer",
+    "heltal": "integer",
     "kommatal": "decimal",
-    "tekst":    "string",
-    "typeløs":  "noType",
+    "tekst": "string",
+    "ingenType": "noType",
 }
 
 BASE_GRAMMAR = Path("grammar/grammar.lark").read_text(encoding="utf-8")
