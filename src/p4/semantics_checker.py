@@ -63,18 +63,33 @@ class CaseSpecificationError(StructureErrorCategory):
         super().__init__(message, line)
 
 class TopLevelDefError(StructureErrorCategory):
-    def __init__(self, line: int | None = None):
+    def __init__(self, node, line: int | None = None):
         # evt. switch or if else for hver mulig ting(??)
         """ declaration_stmt, assignment_stmt, if_stmt, output_stmt, expr_stmt, input_stmt, content"""
-        if name == 'declaration_stmt':
-            error_name  =
+        type_ = node.children[1]
 
+        if type_ == "declaration_stmt":
+            error_name  = "declaration"
+        elif type_ == "assignment_stmt":
+            error_name = "assignment"
+        elif type_ == "if_stmt":
+            error_name = "if statement"
+        elif type_ == "output_stmt":
+            error_name = "output statement"
+        elif type_ == "expr_stmt":
+            error_name = "expression"
+        elif type_ == "input_stmt":
+            error_name = "input statement"
+        else: "content"
 
         message = (f"Only syntax specifications and function definitions are allowed at top level. "
-                   f"Please define {name} somewhere else."
+                   f"The {type} at {line} must be defined within the scope of a function."
                    )
         super().__init__(message, line)
 
+class NestedFunctionsError(StructureErrorCategory):
+    def __init__(self, name: str, line: int | None = None):
+        message = (f". ")
 
 
 # helper dataclass

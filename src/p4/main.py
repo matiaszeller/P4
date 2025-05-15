@@ -30,7 +30,7 @@ def main():
         print("Parsing error:", e)
         return
 
-   """ try:
+    try:
         SemanticsChecker().run(processed_tree)
         print("Semantics checker passed")
     except Exception as e:
@@ -41,7 +41,7 @@ def main():
         interpreter = Interpreter()
         interpreter.visit(processed_tree)
     except Exception as e:
-        print("Interpreter error:", e) """
+        print("Interpreter error:", e)
 
 if __name__ == "__main__":
     main()
