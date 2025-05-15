@@ -260,3 +260,8 @@ class Interpreter:
                 return False
         except (IndexError, AttributeError):
             return False
+
+    def _get_type_with_suffixes(self, children, idx0):
+        base = children[idx0].value
+        sizes, next_idx = self._collect_sizes(children, idx0 + 1)
+        return base + "[]" * len(sizes), sizes, next_idx

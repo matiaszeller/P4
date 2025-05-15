@@ -1,17 +1,14 @@
 Language EN
 Case camelCase
 
-function integer array(){
-    new integer array[5]
-    array[0] = 1
-
-    return array
+function integer[5] makeArray() {
+    new integer arr[5]
+    arr[0] = 1
+    return arr
 }
 
 function noType main() {
-    new integer matrix[10]
-    matrix[9] = 5
-    test = array()
+    new integer test[5]
+    test = makeArray()
     output test
-    output matrix
 }

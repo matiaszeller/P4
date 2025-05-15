@@ -90,7 +90,7 @@ class SemanticsChecker:
     def visit_function_definition(self, n: Tree):
         if not self.in_global_scope: raise StructureError("Nested functions not allowed")
 
-        return_type = n.children[0].value
+        return_type, ret_sizes, pos = self._get_type_with_suffixes(n.children, 0)
         function_name = n.children[1].value
         parameters_node = None  # look for a child node representing parameter declarations
         for child in n.children:
@@ -207,7 +207,7 @@ class SemanticsChecker:
         indices = [suf for suf in left_value.children[1:] if
                    isinstance(suf, Tree) and suf.data == "array_access_suffix"]
 
-        # basic type-check on each index expression + optional const-bound check
+        # basic type-check on each index expression and optional const-bound check
         for dim, suf in enumerate(indices):
             idx_node = suf.children[0]
             if self.visit(idx_node) != "integer":
@@ -454,3 +454,8 @@ class SemanticsChecker:
             sizes.append(int(size_tok))
             i += 1
         return sizes, i
+
+    def _get_type_with_suffixes(self, children, idx0):
+        base = children[idx0].value
+        sizes, next_idx = self._collect_sizes(children, idx0 + 1)
+        return base + "[]" * len(sizes), sizes, next_idx
