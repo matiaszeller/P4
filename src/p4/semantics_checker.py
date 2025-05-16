@@ -38,13 +38,18 @@ class TypeError_(StaticError):
     pass
 
 
-class ScopeError(StaticError):
+class ScopeErrorCategory(StaticError):
     """if variables is not defined/or defined more than once"""
-    pass
+
+class FunctionAlreadyInScopeError(ScopeErrorCategory):
+    def __init__(self, name: str, line: int | None = None):
+        # how can i access the other function.line?
+        message = (f"Function {name} is already defined in line {duplicate_line}")
+        super().__init__(message, line)
 
 
 # ---- structure ----
-class CaseError(StaticError):
+class CaseErrorCategory(StaticError):
     """if ID does not align with casing specification"""
     pass
 
@@ -106,8 +111,20 @@ class TopLevelDefError(StructureErrorCategory):
 
 
 class NestedFunctionsError(StructureErrorCategory):
-    def __init__(self, name: str, line: int | None = None):
-        message = (f". ")
+    def __init__(self, node, line: int | None = None):
+        message = (f"Function {inner_function} is declared within function {outer_function} on line {outer_function_line}."
+                   f"Defining functions within other functions is not allowed."
+                   f"Alternatively define {inner_function} outside the scope of {outer_function}."
+                   f"To use {inner_function} in any other function try using a function call: {inner_function}()"
+                   )
+        super.__init__(message, line)
+
+class NoReturnTypeError(StructureErrorCategory):
+    def __init__(self, name, line: int | None = None):
+        message = f"Function {name} has no return type specified."
+        super().__init__(message, line)
+
+
 
 
 # helper dataclass
@@ -130,6 +147,7 @@ class SemanticsChecker:
         self._func_order: list[str] = []
         self._saw_syntax: bool = False
         self._in_expr_stmt: bool = False
+        self._current_parent = None
 
     # main entry
     def run(self, tree: Tree) -> None:
@@ -137,14 +155,21 @@ class SemanticsChecker:
         self._post_checks()
 
     # walker
-    def _walk(self, node: Tree | Token):
+    def _walk(self, node: Tree | Token, parent = None):
         if isinstance(node, Token):
-            return self._visit_token(node)
-        return getattr(self, f"visit_{node.data}", self._default)(node)
+            node.parent = parent
+            self._visit_token(node)
+        elif isinstance(node, Tree):
+            node.parent = parent
+            method = getattr(self, f"visit_{node.data}", self._default)
+            method(node)
 
-    def _default(self, n: Tree):
-        for ch in n.children:
-            self._walk(ch)
+    def _default(self, node: Tree):
+        for child in node.children:
+            self._walk(child, parent = node)
+
+    def case_check(self, name: str, line: int | None = None) -> CaseErrorCategory:
+        pass #page45
 
     # token handling
     def _visit_token(self, tk: Token):
@@ -167,21 +192,24 @@ class SemanticsChecker:
         if lang in BasicValues.LANGUAGES:
             self._configuration["language"] = lang
         else:
-            raise LanguageSpecificationError(lang, n.line)
+            raise LanguageSpecificationError(lang, node.line)
 
         if case in BasicValues.CASESTYLES:
             self._configuration["case_style"] = case
         else:
-            raise CaseSpecificationError(case, n.line)
+            raise CaseSpecificationError(case, node.line)
 
         self._saw_syntax = case, True
+
+        for child in node.children:
+            self._walk(child, parent = node)
 
     # start
     def visit_start(self, node: Tree):
         for child in node.children:
-            self._walk(child)
             if isinstance(child, Tree) and child.data not in {"syntax", "function_definition"}:
                 raise TopLevelDefError(child, node.line)
+            self._walk(child)
 
     # functions
     def visit_function_definition(self, node: Tree):
