@@ -13,7 +13,7 @@ function noType main() {
     a = 10
     output a
 
-    new integer matrix[][]
+    new integer matrix[3][3]
     matrix[0][0] = 5
     matrix[1][2] = 15
     output matrix[0][0]
