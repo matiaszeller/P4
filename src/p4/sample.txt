@@ -1,17 +1,7 @@
-Language DK
+Language EN
 Case camelCase
 
-funktion ingenType main() {
-    ny heltal a
-    ny tekst b
-    ny boolean c
-    ny kommatal d
-    a = indskriv
-    udskriv a
-    b = indskriv
-    udskriv b
-    c = indskriv
-    udskriv c
-    d = indskriv
-    udskriv d
+
+function noType main() {
+    new integer a = "hello"
 }

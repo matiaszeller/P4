@@ -1,6 +1,6 @@
-from dataclasses import dataclass  # Lightweight record for function metadata
+from dataclasses import dataclass, field  # Lightweight record for function metadata
 from collections import ChainMap  # Nested, write-through symbol tables
-from typing import List, Dict  # Static typing helpers
+from typing import List, Dict, Any  # Static typing helpers
 from lark import Tree, Token  # AST node and token classes from Lark
 
 # error hierarchy
@@ -60,7 +60,7 @@ class SemanticsChecker:
         if token.type == "STRING":  return "string"
         if token.type == "ID":  # Identifier lookup must respect scope
             if token.value not in self.variable_map:
-                raise ScopeError(f"Undeclared identifier '{token.value}'")
+                raise ScopeError(f"Undeclared identifier '{token.value}'") # WE WANT LINE NUMBER HERE
             return self.variable_map[token.value]
         return None  # Commas, brackets, etc. are ignored here
 
@@ -87,7 +87,7 @@ class SemanticsChecker:
         body = node.children[-1]
 
         if function_name in self.function_map:
-            raise ScopeError(f"Function '{function_name}' already defined")
+            raise ScopeError(f"Function '{function_name}' already defined") # WE WANT THE LINE OF WHERE THE FUNCTION IS DEFINED, AND THE LINE THE ERROR OCCURS.
         self.function_order.append(function_name)
 
         # Collect parameter names and types with case- and shadow-checking
@@ -120,7 +120,7 @@ class SemanticsChecker:
 
         # Non-void functions must guarantee a return on every path
         if return_type != "noType" and not self.body_guarantees_return(body):
-            raise StructureError(f"Function '{function_name}' may exit without returning a value")
+            raise StructureError(f"Function '{function_name}' may exit without returning a value") # WE WANT THE LINE OF EXPECTED RETURN, AND WHAT THE EXPECTED RETURN TYPE IS
 
         # Restore outer context
         self.variable_map = outer_vars
@@ -155,16 +155,16 @@ class SemanticsChecker:
         if right_hand_side_node is not None:
             right_hand_side_type = self.visit(right_hand_side_node)
             if right_hand_side_type == "noType" and not self.is_input_expr(right_hand_side_node):
-                raise TypeError_("Cannot initialize with value of noType")
+                raise TypeError_("Cannot initialize with value of noType") # WE WANT THE LINE OF THE ERROR
             if right_hand_side_type != declared_type and right_hand_side_type != "noType":
-                raise TypeError_(f"Initializer type mismatch for '{name}'")
+                raise TypeError_(f"Initializer type mismatch for '{name}'") # WE WANT MORE SPECIFIC EG: DECIMAL ATTEMPTED TO ASSIGN TO INTEGER AND LINE NUMBER
             if sizes and isinstance(right_hand_side_node, Tree) and right_hand_side_node.data == "array_literal":
                 literal_elems = [
                     elem for elem in right_hand_side_node.children[0].children
                     if not (isinstance(elem, Token) and elem.value == ",")
                 ]
                 if len(literal_elems) != sizes[0]:
-                    raise TypeError_(f"Initializer size mismatch for '{name}'")
+                    raise TypeError_(f"Initializer size mismatch for '{name}'") # WE WANT THE LINE OF THE ERROR, AND EXPECTED SIZE
 
         self.variable_map[name] = declared_type
 
@@ -176,7 +176,7 @@ class SemanticsChecker:
         # identifier being assigned to
         name = left_value.children[0].value
         if name not in self.variable_map:
-            raise ScopeError(f"Variable '{name}' not declared")
+            raise ScopeError(f"Variable '{name}' not declared") # WE WANT THE LINE OF THE ERROR
 
         full_type = self.variable_map[name]
         declared_dims = full_type.count("[]")
@@ -191,21 +191,21 @@ class SemanticsChecker:
         for dim, suf in enumerate(indices):
             idx_node = suf.children[0]
             if self.visit(idx_node) != "integer":
-                raise TypeError_("Array index must be integer")
+                raise TypeError_("Array index must be integer") # WE WANT LINE OF ERROR AND ARRAY INDEX ATTEMPTED IN USE
 
             # constant-bound check
             if sizes and sizes[dim] is not None \
                     and isinstance(idx_node, Token) and idx_node.type == "INT" \
                     and int(idx_node) >= sizes[dim]:
-                raise TypeError_("Index out of bounds at compile time")
+                raise TypeError_("Index out of bounds at compile time") # WE WANT THE LINE OF ERROR
 
         # too many indices?
         if len(indices) > declared_dims:
-            raise TypeError_("Too many indices for array")
+            raise TypeError_("Too many indices for array") # WE WANT THE LINE OF ERROR
 
         right_hand_side_type = self.visit(right_hand_side_node)
         if right_hand_side_type == "noType" and not self.is_input_expr(right_hand_side_node):
-            raise TypeError_("Cannot assign value of noType")
+            raise TypeError_("Cannot assign value of noType") # WE WANT THE LINE OF THE ERROR
 
         # determine the expected type after applying the indices
         remaining_dims = declared_dims - len(indices)
@@ -215,28 +215,28 @@ class SemanticsChecker:
         )
 
         if right_hand_side_type not in {expected_type, "noType"}:
-            raise TypeError_("Assignment type mismatch")
+            raise TypeError_("Assignment type mismatch") # WE WANT THE LINE OF ERROR, EG: TRYING TO ASSIGN DECIMAL(specific value) TO VARIBALE(specific + actual type)
 
     # control flow
     def visit_if_stmt(self, node):
         if self.visit(node.children[0]) != "boolean":
-            raise TypeError_("If-condition must be boolean")
+            raise TypeError_("If-condition must be boolean") # LINE OF ERROR + ACTUAL VALUE USED INSTEAD OF BOOLEAN
         self.visit(node.children[1])  # then branch
         if len(node.children) == 3:
             self.visit(node.children[2])  # else branch
 
     def visit_while_stmt(self, node):
         if self.visit(node.children[0]) != "boolean":
-            raise TypeError_("While-condition must be boolean")
+            raise TypeError_("While-condition must be boolean") # LINE OF ERROR + ACTUAL VALUE USED INSTEAD OF BOOLEAN
         self.visit(node.children[1])
 
     def visit_return_stmt(self, node):
         if self.current_return_type is None:
-            raise StructureError("return outside function")
+            raise StructureError("return outside function") # LINE OR ERROR
 
         actual = self.visit(node.children[0])
         if not self.compatible(actual, self.current_return_type):
-            raise TypeError_("Return type mismatch")
+            raise TypeError_("Return type mismatch") # LINE + EXPECTED RETURN TYPE + ACTUAL RETURNED TYPE
 
         self.seen_returns.append(actual)
 
@@ -259,17 +259,17 @@ class SemanticsChecker:
         # '+' supports string concatenation; others require numeric
         if operator == "+":
             if left_type != right_type or left_type not in self._ARITH:
-                raise TypeError_("operands of + must match and be numeric or string")
+                raise TypeError_("operands of + must match and be numeric or string") # line of error + values used for operator
             return left_type
         if operator in {"-", "*", "%"}:
             if left_type != right_type or left_type not in self._NUM:
-                raise TypeError_(f"operands of {operator} must both be integer or decimal")
+                raise TypeError_(f"operands of {operator} must both be integer or decimal") # line of error + values used for operator
             return left_type
         if operator == "/":
             if left_type != right_type or left_type not in self._NUM:
-                raise TypeError_("operands of / must both be integer or decimal")
+                raise TypeError_("operands of / must both be integer or decimal") # line of error + values used for operator
             return "decimal"  # Division always yields decimal
-        raise StructureError(f"unknown operator {operator}")
+        raise StructureError(f"unknown operator {operator}") # line of error + operator attempted, permissible operators
 
     # comparison
     def visit_compare_expr(self, node):
@@ -278,10 +278,10 @@ class SemanticsChecker:
         right_type = self.visit(node.children[2])
         if operator in {"==", "!="}:  # Equality works for any matching types
             if left_type != right_type:
-                raise TypeError_("operands of ==/!= must match")
+                raise TypeError_("operands of ==/!= must match") # line of error + values used for operator
         else:  # <, <=, >, >= restricted to numbers
             if left_type != right_type or left_type not in self._NUM:
-                raise TypeError_(f"operands of {operator} must both be integer or decimal")
+                raise TypeError_(f"operands of {operator} must both be integer or decimal") # line of error + values used for operator
         return "boolean"
 
     # logical and/or
@@ -289,13 +289,13 @@ class SemanticsChecker:
         # Children alternate operand, operator, operand, ...
         for i in range(0, len(node.children), 2):
             if self.visit(node.children[i]) != "boolean":
-                raise TypeError_("logical operands must be boolean")
+                raise TypeError_("logical operands must be boolean") # line of error + actual value used instead of boolean
         return "boolean"
 
     # array literal
     def visit_array_literal(self, node):
         if not node.children:
-            raise TypeError_("empty array literal")
+            raise TypeError_("empty array literal") # line of error, you have used an empty array literal
         # Flatten comma-separated list into element nodes only
         elements = []  # collect element types from the first child’s subtree
         for node in node.children[0].children:
@@ -304,7 +304,7 @@ class SemanticsChecker:
             element_type = self.visit(node)  # compute the type of the element
             elements.append(element_type)
         if any(t != elements[0] for t in elements):
-            raise TypeError_("array elements must share type")
+            raise TypeError_("array elements must share type") # line of error, array type + first wrong element type + index of element
         return elements[0] + "[]"  # Resulting type is elementType[]
 
     # postfix (function call, array indexing)
@@ -317,10 +317,10 @@ class SemanticsChecker:
             if suf.data == "call_suffix":
                 # First suffix can only be applied to an identifier
                 if id_token is None:
-                    raise StructureError("function call must target identifier")
+                    raise StructureError("function call must target identifier") # we want to pass line of error, and used function call value, eg "5 is not an identifier"
                 signature = self.function_map.get(id_token.value)
                 if signature is None:
-                    raise ScopeError(f"call to undefined function '{id_token.value}'")
+                    raise ScopeError(f"call to undefined function '{id_token.value}'") # line of error and value used to try to call
 
                 # Parse argument list, skipping comma tokens
                 raw_arguments = suf.children[0].children if suf.children else []
@@ -332,29 +332,24 @@ class SemanticsChecker:
                 argument_types = [self.visit(a) for a in argument_nodes]
 
                 if len(argument_types) != len(signature.parameters):
-                    raise StructureError(f"wrong number of arguments in call to '{id_token.value}'")
+                    raise StructureError(f"wrong number of arguments in call to '{id_token.value}'") # line of error, used arguments and expected arguments
                 for arg_t, expected in zip(argument_types, signature.parameters):
                     if arg_t not in {expected, "noType"}:
-                        raise TypeError_("argument type mismatch")
+                        raise TypeError_("argument type mismatch") # line of error, and what wrong used arguments, and what expected argument
 
                 current_type, id_token = signature.return_type, None  # Type post-call; clear id_token
             elif suf.data == "array_access_suffix":
                 # Resolve base type for the first indexing occurrence
                 current_type = self.visit(primary) if current_type is None else current_type
                 if not current_type.endswith("[]"):
-                    raise TypeError_("indexing non-array value")
+                    raise TypeError_("indexing non-array value") # line of error and message "identifier is not an array"
                 if self.visit(suf.children[0]) != "integer":
-                    raise TypeError_("array index must be integer")
+                    raise TypeError_("array index must be integer") # line of error and value used as array index
                 current_type = current_type[:-2]  # Drop one dimension
-            else:
-                raise StructureError("unexpected postfix suffix")
 
         if current_type is None:  # No suffixes: just primary expression
             current_type = self.visit(primary)
 
-        # Using a void/noType value inside an expression (except expr_stmt) is illegal
-        if current_type == "noType" and not self.in_expr_stmt:
-            raise TypeError_("void value used in expression")
         return current_type
 
     # input literal
@@ -366,14 +361,14 @@ class SemanticsChecker:
     def check_case(self, name: str):
         if self.case_style == "camelCase":
             if "_" in name or not name[0].islower():
-                raise CaseError(f"'{name}' not camelCase")
+                raise CaseError(f"'{name}' not camelCase") # line of error
         else:  # snake_case
             if any(c.isupper() for c in name):
-                raise CaseError(f"'{name}' not snake_case")
+                raise CaseError(f"'{name}' not snake_case") # line of error
 
     def shadow_check(self, name: str):
         if name in self.variable_map:
-            raise ScopeError(f"shadowing '{name}'")
+            raise ScopeError(f"shadowing '{name}'") # line of error
 
     def is_input_expr(self, node: Tree | Token | None) -> bool:
         return isinstance(node, Tree) and node.data == "input_expr"
@@ -396,7 +391,7 @@ class SemanticsChecker:
             if isinstance(child, Tree) and child.data == "return_stmt":
                 return_count += 1  # increment for each return statement found
         if return_count > 1:
-            raise StructureError("Multiple returns in same branch")
+            raise StructureError("Multiple returns in same branch") # line of error
         for c in block.children:
             if not isinstance(c, Tree):
                 continue
