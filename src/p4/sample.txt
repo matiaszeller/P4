@@ -3,5 +3,6 @@ Case camelCase
 
 
 function noType main() {
-    new integer a = "hello"
+    new integer a = 5
+    output b
 }
