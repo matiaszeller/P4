@@ -14,7 +14,6 @@ def location(node):
 # error hierarchy
 @dataclass
 class StaticError(Exception):
-    # base class carrying rich diagnostic data
     msg: str
     line: int | None = None
     column: int | None = None
