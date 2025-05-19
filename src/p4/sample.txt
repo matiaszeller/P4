@@ -8,5 +8,5 @@ function noType add(integer a, integer b) {
 
 
 function noType main() {
-    new integer a[][][] = [[10]]
+    new decimal a = 2.4
 }

@@ -34,7 +34,6 @@ class Interpreter:
 
     ## Terminals
     def visit_token(self, node):
-        print(node.type)
         if node.type == "INT":
             return int(node)
         elif node.type == "ID":

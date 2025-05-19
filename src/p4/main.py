@@ -34,7 +34,7 @@ def main():
         print(transformed_tree)
         print('\n')
         print(tree)
-        #pydot__tree_to_png(tree, "tree.png") #YOU NEED pydot AND graphviz for this step
+        pydot__tree_to_png(tree, "tree.png") #YOU NEED pydot AND graphviz for this step
     except Exception as e:
         print("Parsing error:", e)
 
