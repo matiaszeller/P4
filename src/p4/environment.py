@@ -17,9 +17,9 @@ class Environment:
             if base == "decimal":
                 return float(value)
             if base == "boolean":
-                if value.lower() in ("true", "1"): # do we want this support?
+                if value == "true":
                     return True
-                if value.lower() in ("false", "0"): # do we want this support?
+                if value == "false":
                     return False
                 raise ValueError
             if base == "string":

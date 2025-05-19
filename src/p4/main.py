@@ -25,7 +25,7 @@ def main():
         print(tree)
         print(processed_tree)
         # Uncomment to update tree.png (need to install requirements.txt and graphviz from https://gitlab.com/api/v4/projects/4207231/packages/generic/graphviz-releases/12.2.1/windows_10_cmake_Release_graphviz-install-12.2.1-win64.exe)
-        pydot__tree_to_png(processed_tree, "tree.png")
+        # pydot__tree_to_png(processed_tree, "tree.png")
     except Exception as e:
         print("Parsing error:", e)
         return
