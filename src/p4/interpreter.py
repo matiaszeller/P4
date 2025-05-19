@@ -38,6 +38,8 @@ class Interpreter:
             return int(node)
         elif node.type == "ID":
             return self.env.get_variable(node)
+        elif node.type == "FLOAT":
+            return float(node)
         elif node.type == "NEWLINE":
             return
         elif node.type == "BOOLEAN":

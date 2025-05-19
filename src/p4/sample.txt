@@ -1,12 +1,9 @@
 Language EN
 Case camelCase
 
-function noType add(integer a, integer b) {
-    output a + b
-    output 2+2
-}
-
-
-function noType main() {
-    new decimal a = 2.4
+function integer main () {
+    new integer x = 5
+    if true then {
+        new integer y = 2 + 2.3
+    }
 }
