@@ -6,11 +6,11 @@ class Interpreter:
     def __init__(self):
         self.env = Environment()
 
-    #Recursive logic for visits
+    # Recursive logic for visits
     def visit(self, node):
         if isinstance(node, Tree):
             data = node.data
-            method_name = f'visit_{data}'
+            method_name = f"visit_{data}"
             method = getattr(self, method_name, self.bad_visit)
             return method(node)
         elif isinstance(node, Token):
@@ -19,7 +19,7 @@ class Interpreter:
 
     ## Error handling
     def bad_visit(self, node):
-        raise Exception(f'visit_{node.data} is not implemented.')
+        raise Exception(f"visit_{node.data} is not implemented.")
 
     ## Start and Block
     def visit_start(self, node):
@@ -31,36 +31,23 @@ class Interpreter:
             result = self.visit(child)
             if result is not None:
                 return result
+        return None
 
-    ## Terminals
     def visit_token(self, node):
         if node.type == "INT":
             return int(node)
         elif node.type == "ID":
-            return self.env.get_variable(node)
+            return self.env.get_variable(node.value)
         elif node.type == "FLOAT":
             return float(node)
-        elif node.type == "NEWLINE":
-            return
+        elif node.type == "STRING":
+            return ast.literal_eval(node.value)
         elif node.type == "BOOLEAN":
-            if node == "true":
-                return True
-            elif node == "false":
-                return False
-            raise Exception(f'{node} is not a valid boolean value.')
+            return node.value == "true"
         else:
-            raise Exception(f'Unknown type: {node.type}')
+            raise Exception(f"Unknown type: {node.type}")
 
-    def visit_decimal(self, node):
-        number = node.children[0]
-        fraction = node.children[1]
-        return float(f"{number}.{fraction}")
-
-    def visit_string(self, node):
-        string = ast.literal_eval(node.children[0])
-        return string
-
-    #Unary expressions
+    # Unary expressions
     def visit_uminus(self, node):
         value = self.visit(node.children[1])
         return -value
@@ -70,56 +57,36 @@ class Interpreter:
         return not bool(boolean)
 
     ## Binary Expressions
-    def visit_add_expr(self, node):
+    def visit_arit_expr(self, node):
         result = self.visit(node.children[0])
-
         for i in range(1, len(node.children), 2):
-            operator = node.children[i]
-            operand = self.visit(node.children[i +1])
-
-            if operator == "+":
-                result += operand
-            elif operator == "-":
-                result -= operand
-            else:
-                raise Exception(f'Unsupported operator: {operator}. Expected + or -.')
-        return result
-
-    def visit_mul_expr(self, node):
-        result = self.visit(node.children[0])
-
-        for i in range(1, len(node.children), 2):
-            operator = node.children[i]
-            operand = self.visit(node.children[i+1])
-
+            operator = node.children[i].value
+            operand = self.visit(node.children[i + 1])
             if operator == "*":
                 result *= operand
             elif operator == "/":
                 result /= operand
             elif operator == "%":
                 result %= operand
+            elif operator == "-":
+                result -= operand
+            elif operator == "+":
+                result += operand
             else:
-                raise Exception(f'Unsupported operator: {operator}, expected *, /, or %.')
+                raise Exception(
+                    f"Unsupported operator: {operator}, expected *, /, %, + or -"
+                )
         return result
 
-    def visit_equality_expr(self, node):
+    def visit_compare_expr(self, node):
         value1 = self.visit(node.children[0])
         value2 = self.visit(node.children[2])
-        operator = node.children[1]
-
+        operator = node.children[1].value
         if operator == "==":
             return value1 == value2
         elif operator == "!=":
             return value1 != value2
-        else:
-            raise Exception(f'Unsupported operator: {operator}, expected == or !=.')
-
-    def visit_relational_expr(self, node):
-        value1 = self.visit(node.children[0])
-        value2 = self.visit(node.children[2])
-        operator = node.children[1]
-
-        if operator == "<":
+        elif operator == "<":
             return value1 < value2
         elif operator == ">":
             return value1 > value2
@@ -128,20 +95,21 @@ class Interpreter:
         elif operator == ">=":
             return value1 >= value2
         else:
-            raise Exception(f'Unsupported operator: {operator}, expected <, >, <=, or >=.')
+            raise Exception(
+                f"Unsupported operator: {operator}, expected ==, !=, <, >, <=, or >=."
+            )
 
-    def visit_and_expr(self, node):
+    def visit_logical_expr(self, node):
         result = self.visit(node.children[0])
-        for i in range(1, len(node.children)):
-            boolean = self.visit(node.children[i])
-            result = result and boolean
-        return result
-
-    def visit_or_expr(self, node):
-        result = self.visit(node.children[0])
-        for i in range(1, len(node.children)):
-            boolean = self.visit(node.children[i])
-            result = result or boolean
+        for i in range(1, len(node.children), 2):
+            op = node.children[i].value
+            rhs = self.visit(node.children[i + 1])
+            if op == "and":
+                result = result and rhs
+            elif op == "or":
+                result = result or rhs
+            else:
+                raise Exception(f"Unknown logical op '{op}'")
         return result
 
     ## Statements
@@ -149,39 +117,31 @@ class Interpreter:
         return self.visit(node.children[0])
 
     def visit_declaration_stmt(self, node):
-        name = node.children[1]
-        type = node.children[0]
-        children_amount = len(node.children)
-        if children_amount == 2: #Contains only name and type
-            self.env.declare_variable(name,type)
-        elif self.isArray(node):
-            if self.hasValue(node.children[-2]): #Contains initial value for array
-                array_depth = len(node.children) - 3 #name, type and value children are discounted
-                array_values = self.visit(node.children[-1])
-                if not isinstance(array_values, list):
-                    raise Exception(f'Cannot assign {array_values} to array variable {name}. Make sure it is a list of values separated by commas, and wrapped in brackets.')
-                self.env.declare_variable(name, type, array_depth)
-                self.env.set_variable(name, array_values)
-            else:
-                array_depth = len(node.children) - 2
-                self.env.declare_variable(name, type, array_depth)
-        else:
-            self.env.declare_variable(name, type)
-            self.env.set_variable(name, self.visit(node.children[-1]))
+        type_tok = node.children[0]
+        name_tok = node.children[1]
+        sizes, idx = self.collect_sizes(node.children, 2)
+        has_value = idx < len(node.children)
+        self.env.declare_variable(name_tok.value, type_tok.value, sizes)
+        if has_value:
+            value = self.visit(node.children[idx])
+            if sizes and not isinstance(value, list):
+                raise Exception(
+                    f"Cannot assign {value} to array variable {name_tok}."
+                )
+            self.env.set_variable(name_tok.value, value)
 
     def visit_assignment_stmt(self, node):
-        name = node.children[0].children[0]
+        name_tok = node.children[0].children[0]
         value = self.visit(node.children[1])
-        index_depth = len(node.children[0].children)-1
-
+        index_depth = len(node.children[0].children) - 1
         if index_depth == 0:
-            self.env.set_variable(name, value)
+            self.env.set_variable(name_tok.value, value)
         else:
-            index_list = [None]*index_depth
-            for i in range(index_depth):
-                index_list[i] = self.visit(node.children[0].children[i+1])
-            self.env.set_variable(name, value, index_list)
-
+            index_list = [
+                self.visit(node.children[0].children[i + 1])
+                for i in range(index_depth)
+            ]
+            self.env.set_variable(name_tok.value, value, index_list)
 
     def visit_if_stmt(self, node):
         condition = node.children[0]
@@ -205,78 +165,107 @@ class Interpreter:
     def visit_output_stmt(self, node):
         print(self.visit(node.children[0]))
 
-    def visit_input_stmt(self, node):
-        return input()
+    def visit_input_expr(self, node):
+        return input().strip()
 
     ## Functions & Arrays
     def visit_function_definition(self, node):
-        name = node.children[1]
-        type = node.children[0]
+        name_tok = node.children[1]
+        type_tok = node.children[0]
         block = node.children[-1]
-        hasParams = True if len(node.children) == 4 else False
-        if name == "main":
+        has_params = len(node.children) == 4
+        if name_tok.value == "main":
             self.visit(block)
-        elif hasParams:
+        elif has_params:
             parameters = node.children[2]
-            self.env.declare_function(name, type, block, parameters)
+            self.env.declare_function(
+                name_tok.value, type_tok.value, block, parameters
+            )
         else:
-            self.env.declare_function(name, type, block)
-
+            self.env.declare_function(name_tok.value, type_tok.value, block)
 
     def visit_postfix_expr(self, node):
-        name = node.children[0]
+        name_tok = node.children[0]
         suffix = node.children[-1]
         if suffix.data == "call_suffix":
             function_interpreter = Interpreter()
             function_interpreter.env.functions = self.env.functions.copy()
             if len(suffix.children) == 1:
-                parameters = suffix.children[0]
-                parameter_count = len(parameters.children)
-                for i in range(parameter_count):
-                    parameter_name = self.env.get_function(name)['parameters'].children[i].children[1].value
-                    parameter_value = self.visit(parameters.children[i])
-                    parameter_type = self.env.get_function(name)['parameters'].children[i].children[0].value
-                    function_interpreter.env.declare_variable(parameter_name, parameter_type)
-                    function_interpreter.env.set_variable(parameter_name, parameter_value)
-            return self.visit(function_interpreter.visit(self.env.get_function(name)['block']))
+                parameters = suffix.children[0].children
+                param_iter = (
+                    p
+                    for p in parameters
+                    if not (isinstance(p, Token) and p.value == ",")
+                )
+                meta = self.env.get_function(name_tok.value)
+                for i, arg_node in enumerate(param_iter):
+                    param = meta["parameters"].children[i]
+                    param_name = param.children[1].value
+                    param_type = param.children[0].value
+                    param_sizes, _ = self.collect_sizes(param.children, 2)
+                    function_interpreter.env.declare_variable(
+                        param_name, param_type, param_sizes
+                    )
+                    function_interpreter.env.set_variable(
+                        param_name, self.visit(arg_node)
+                    )
+            return function_interpreter.visit(
+                self.env.get_function(name_tok.value)["block"]
+            )
         elif suffix.data == "array_access_suffix":
-            indices = len(node.children)-1
-            array_index = [None]*indices
-            for i in range(indices):
-                array_index[i] = self.visit(node.children[i+1])
-            return self.env.get_variable(name,array_index)
+            indices = [self.visit(child) for child in node.children[1:]]
+            return self.env.get_variable(name_tok.value, indices)
         return None
 
     def visit_array_suffix(self, node):
-        return True
+        return int(node.children[0])
 
     def visit_array_access_suffix(self, node):
         index = self.visit(node.children[0])
         return index
 
     def visit_array_literal(self, node):
-        list_values = []
-        for child in node.children[0].children:
-            list_values.append(self.visit(child))
+        list_values = [
+            self.visit(child)
+            for child in node.children[0].children
+            if not (isinstance(child, Token) and child.value == ",")
+        ]
         return list_values
 
     ## Syntax
     def visit_syntax(self, node):
-        print(f'You are programming in {node.children[0]} using {node.children[2]}\n')
+        print(f"You are programming in {node.children[0]} using {node.children[1]}\n")
 
     ## Helper Functions
-    def hasValue(self, node):
-        print(node.data)
-        if node.data == "array_suffix":
-            return True
-        else:
-            return False
+    def has_value(self, node):
+        return not (isinstance(node, Tree) and node.data == "array_suffix")
 
-    def isArray(self, node):
+    def is_array(self, node):
         try:
             if node.children[2].data == "array_suffix":
                 return True
             else:
                 return False
-        except IndexError and AttributeError:
+        except (IndexError, AttributeError):
             return False
+
+    def get_type_with_suffixes(self, children, idx0):
+        base = children[idx0].value
+        sizes, next_idx = self.collect_sizes(children, idx0 + 1)
+        return base + "[]" * len(sizes), sizes, next_idx
+
+    def collect_sizes(self, children, start):
+        sizes = []
+        i = start
+        while (
+            i < len(children)
+            and isinstance(children[i], Tree)
+            and children[i].data == "array_suffix"
+        ):
+            expr_node = children[i].children[0]       # INT, ID, or expr
+            size_val = self.visit(expr_node)          # run-time evaluation
+            if not isinstance(size_val, int):
+                raise Exception("Array size must evaluate to an integer")
+            sizes.append(size_val)
+            i += 1
+        return sizes, i

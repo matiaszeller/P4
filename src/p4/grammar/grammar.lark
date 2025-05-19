@@ -5,13 +5,13 @@
 %ignore WS_INLINE
 %ignore COMMENT
 
-start: syntax (COMMENT)* function_definition ((NEWLINE)* (COMMENT)* function_definition)*
+start: syntax NEWLINE* function_definition (NEWLINE* function_definition)*
 
 syntax: "Language" LANG NEWLINE "Case" CASE NEWLINE
 
 function_definition: _FUNCTION TYPE array_suffix? ID "(" [params] ")" block
 
-block: "{" NEWLINE? stmt (NEWLINE stmt+)* NEWLINE? "}"
+block: "{" NEWLINE* (stmt (NEWLINE+ stmt)*)? NEWLINE* "}"
 
 ?stmt: assignment_stmt
      | declaration_stmt
@@ -49,19 +49,25 @@ UMINUS: "-"
 ?postfix_expr: primary ( call_suffix | array_access_suffix )* | primary
 call_suffix: "(" [arguments] ")"
 array_access_suffix: "[" expr "]"
-?primary: INT | ID | array_literal | "(" expr ")" | FLOAT | string | BOOLEAN | input_expr
+?primary: INT | ID | array_literal | "(" expr ")" | FLOAT | STRING | BOOLEAN | input_expr
 arguments: expr ("," expr)*
 
 array_literal: "[" [array_elements] "]"
 array_elements: expr ("," expr)*
 params: param ("," param)*
 param: TYPE ID array_suffix?
-array_suffix: "[" "]"
+array_suffix : "[" (INT | ID) "]"
 
-TYPE: "boolean" | "integer" | "decimal" | "string" | "noType"
+TYPE: __TYPE_ALTS__
 LANG: "DK" | "EN"
 CASE: "camelCase" | "snake_case"
-string: /"([^"\\]*(\\.[^"\\]*)*)"/
+STRING: /"([^"\\]*(\\.[^"\\]*)*)"/
 BOOLEAN: "true" | "false"
-ID: /(?!(true|false|if|else|while|return|function|input|output|then|do)\b)[a-zæøå][a-zA-ZæøåÆØÅ0-9]*(?:_[a-zA-ZæøåÆØÅ0-9]+)*/
-COMMENT: /(?:\n)?#[\s\S]*?#/
+ID: /(?!(true|false
+        |function|new|if|then|else|while|do|return|output|input
+        |funktion|ny|hvis|så|ellers|mens|gør|returner|udskriv|indskriv
+        |boolean|integer|decimal|string|noType
+        |heltal|kommatal|tekst|ingenType)\b)
+      [a-zæøå][a-zA-ZæøåÆØÅ0-9]*
+      (?:_[a-zA-ZæøåÆØÅ0-9]+)*/x
+COMMENT: /[ \t]*#[^\n]*#?\r?\n/
