@@ -107,7 +107,7 @@ class ParseTreeProcessor(Transformer):
             i += 2
         return left
 
-    def _build_logical(self, op_str, items):
+    def build_logical(self, op_str, items):
         if len(items) == 1:
             return items[0]
         left = items[0]
@@ -116,8 +116,8 @@ class ParseTreeProcessor(Transformer):
             left = Tree('logical_expr', [left, op, right])
         return left
 
-    def and_expr(self, items): return self._build_logical('and', items)
-    def or_expr(self, items): return self._build_logical('or', items)
+    def and_expr(self, items): return self.build_logical('and', items)
+    def or_expr(self, items): return self.build_logical('or', items)
 
     def equality_expr(self, items): return Tree('compare_expr', items)
     def relational_expr(self, items): return Tree('compare_expr', items)
