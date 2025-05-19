@@ -47,8 +47,8 @@ class SemanticsChecker:
             return self.visit_token(node)
         return None  # Ignore anything else (should not happen)
 
-    def default(self, n: Tree):
-        for child in n.children:  # Depth-first traversal for productions without a custom visitor
+    def default(self, node):
+        for child in node.children:  # Depth-first traversal for productions without a custom visitor
             self.visit(child)
 
     # token handling
@@ -65,26 +65,26 @@ class SemanticsChecker:
         return None  # Commas, brackets, etc. are ignored here
 
     # syntax header
-    def visit_syntax(self, n: Tree):
-        case = n.children[1].value
+    def visit_syntax(self, node):
+        case = node.children[1].value
         self.case_style = case
 
     # start symbol
-    def visit_start(self, n: Tree):
-        for child in n.children:
+    def visit_start(self, node):
+        for child in node.children:
             self.visit(child)
 
     # functions
-    def visit_function_definition(self, n: Tree):
+    def visit_function_definition(self, node):
 
-        return_type = self.get_base_type(n.children, 0)
-        function_name = n.children[1].value
+        return_type = self.get_base_type(node.children, 0)
+        function_name = node.children[1].value
         parameters_node = None  # look for a child node representing parameter declarations
-        for child in n.children:
+        for child in node.children:
             if isinstance(child, Tree) and child.data == "params":
                 parameters_node = child  # found the params subtree
                 break  # stop once we've located it
-        body = n.children[-1]
+        body = node.children[-1]
 
         if function_name in self.function_map:
             raise ScopeError(f"Function '{function_name}' already defined")
@@ -129,16 +129,16 @@ class SemanticsChecker:
         self.check_single_return(body)  # Enforce at most one return per branch
 
     # blocks
-    def visit_block(self, n: Tree):
+    def visit_block(self, node: Tree):
         # Sequential walk; nothing special aside from nesting handled by scopes elsewhere
-        for st in n.children:
+        for st in node.children:
             self.visit(st)
 
     # variable declarations
-    def visit_declaration_stmt(self, n: Tree):
-        base = n.children[0].value
-        name = n.children[1].value
-        sizes, idx = self.collect_sizes(n.children, 2)
+    def visit_declaration_stmt(self, node):
+        base = node.children[0].value
+        name = node.children[1].value
+        sizes, idx = self.collect_sizes(node.children, 2)
 
         self.check_case(name)
         self.shadow_check(name)
@@ -146,9 +146,9 @@ class SemanticsChecker:
         declared_type = base + "[]" * len(sizes)
 
         right_hand_side_node = None
-        if idx < len(n.children):
-            child = n.children[idx]
-            right_hand_side_node = n.children[idx + 1] if isinstance(child, Token) and child.value == "=" else child
+        if idx < len(node.children):
+            child = node.children[idx]
+            right_hand_side_node = node.children[idx + 1] if isinstance(child, Token) and child.value == "=" else child
             if isinstance(right_hand_side_node, list):
                 right_hand_side_node = right_hand_side_node[0] if right_hand_side_node else None
 
@@ -169,9 +169,9 @@ class SemanticsChecker:
         self.variable_map[name] = declared_type
 
     # assignments
-    def visit_assignment_stmt(self, n: Tree):
-        left_value = n.children[0]
-        right_hand_side_node = n.children[-1]
+    def visit_assignment_stmt(self, node):
+        left_value = node.children[0]
+        right_hand_side_node = node.children[-1]
 
         # identifier being assigned to
         name = left_value.children[0].value
@@ -218,42 +218,42 @@ class SemanticsChecker:
             raise TypeError_("Assignment type mismatch")
 
     # control flow
-    def visit_if_stmt(self, n: Tree):
-        if self.visit(n.children[0]) != "boolean":
+    def visit_if_stmt(self, node):
+        if self.visit(node.children[0]) != "boolean":
             raise TypeError_("If-condition must be boolean")
-        self.visit(n.children[1])  # then branch
-        if len(n.children) == 3:
-            self.visit(n.children[2])  # else branch
+        self.visit(node.children[1])  # then branch
+        if len(node.children) == 3:
+            self.visit(node.children[2])  # else branch
 
-    def visit_while_stmt(self, n: Tree):
-        if self.visit(n.children[0]) != "boolean":
+    def visit_while_stmt(self, node):
+        if self.visit(node.children[0]) != "boolean":
             raise TypeError_("While-condition must be boolean")
-        self.visit(n.children[1])
+        self.visit(node.children[1])
 
-    def visit_return_stmt(self, n: Tree):
+    def visit_return_stmt(self, node):
         if self.current_return_type is None:
             raise StructureError("return outside function")
 
-        actual = self.visit(n.children[0])
+        actual = self.visit(node.children[0])
         if not self.compatible(actual, self.current_return_type):
             raise TypeError_("Return type mismatch")
 
         self.seen_returns.append(actual)
 
     # expression statement
-    def visit_expr_stmt(self, n: Tree):
+    def visit_expr_stmt(self, node):
         previous = self.in_expr_stmt
         self.in_expr_stmt = True  # Suppress "void value" error for RHS 'noType'
-        self.visit(n.children[0])
+        self.visit(node.children[0])
         self.in_expr_stmt = previous
 
     # arithmetic expression
-    def visit_arit_expr(self, n: Tree):
-        left_type = self.visit(n.children[0])
-        operator_token: Token = n.children[1] if len(n.children) == 3 else None
+    def visit_arit_expr(self, node):
+        left_type = self.visit(node.children[0])
+        operator_token: Token = node.children[1] if len(node.children) == 3 else None
         if operator_token is None:  # Single operand (propagates type)
             return left_type
-        right_type = self.visit(n.children[2])
+        right_type = self.visit(node.children[2])
         operator = operator_token.value
 
         # '+' supports string concatenation; others require numeric
@@ -272,10 +272,10 @@ class SemanticsChecker:
         raise StructureError(f"unknown operator {operator}")
 
     # comparison
-    def visit_compare_expr(self, n: Tree):
-        left_type = self.visit(n.children[0])
-        operator = n.children[1].value
-        right_type = self.visit(n.children[2])
+    def visit_compare_expr(self, node):
+        left_type = self.visit(node.children[0])
+        operator = node.children[1].value
+        right_type = self.visit(node.children[2])
         if operator in {"==", "!="}:  # Equality works for any matching types
             if left_type != right_type:
                 raise TypeError_("operands of ==/!= must match")
@@ -285,20 +285,20 @@ class SemanticsChecker:
         return "boolean"
 
     # logical and/or
-    def visit_logical_expr(self, n: Tree):
+    def visit_logical_expr(self, node):
         # Children alternate operand, operator, operand, ...
-        for i in range(0, len(n.children), 2):
-            if self.visit(n.children[i]) != "boolean":
+        for i in range(0, len(node.children), 2):
+            if self.visit(node.children[i]) != "boolean":
                 raise TypeError_("logical operands must be boolean")
         return "boolean"
 
     # array literal
-    def visit_array_literal(self, n: Tree):
-        if not n.children:
+    def visit_array_literal(self, node):
+        if not node.children:
             raise TypeError_("empty array literal")
         # Flatten comma-separated list into element nodes only
         elements = []  # collect element types from the first child’s subtree
-        for node in n.children[0].children:
+        for node in node.children[0].children:
             if isinstance(node, Token) and node.value == ",":
                 continue  # skip comma separators
             element_type = self.visit(node)  # compute the type of the element
@@ -308,12 +308,12 @@ class SemanticsChecker:
         return elements[0] + "[]"  # Resulting type is elementType[]
 
     # postfix (function call, array indexing)
-    def visit_postfix_expr(self, n: Tree):
-        primary = n.children[0]
+    def visit_postfix_expr(self, node):
+        primary = node.children[0]
         id_token: Token | None = primary if isinstance(primary, Token) and primary.type == "ID" else None
         current_type: str | None = None  # Tracks the running type as suffixes are processed
 
-        for suf in n.children[1:]:
+        for suf in node.children[1:]:
             if suf.data == "call_suffix":
                 # First suffix can only be applied to an identifier
                 if id_token is None:
