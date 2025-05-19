@@ -17,9 +17,9 @@ class Environment:
             if base == "decimal":
                 return float(value)
             if base == "boolean":
-                if value == "true":
+                if value == "true" or value == "sand":
                     return True
-                if value == "false":
+                if value == "false" or value == "falsk":
                     return False
                 raise ValueError
             if base == "string":
