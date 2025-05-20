@@ -1,0 +1,10 @@
+Language EN
+Case snake_case
+
+function string textFile(){
+    return "Hello world"
+}
+
+function noType main(){
+    output textFile()
+}

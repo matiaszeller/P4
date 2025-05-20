@@ -1,0 +1,8 @@
+Language EN
+Case camelCase
+
+function noType main(){
+    if true then {
+        output "Bool"
+    }
+}

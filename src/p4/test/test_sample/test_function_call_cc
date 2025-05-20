@@ -1,0 +1,10 @@
+Language EN
+Case camelCase
+
+function string textFile(){
+    return "Hello world"
+}
+
+function noType main(){
+    output textFile()
+}
