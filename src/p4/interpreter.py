@@ -1,6 +1,8 @@
 from lark import Tree, Token
 from environment import Environment
+from error import TreeError, OperatorError, ArrayIndexError, ArrayDimensionError
 import ast
+
 
 class Interpreter:
     def __init__(self):
@@ -19,7 +21,7 @@ class Interpreter:
 
     ## Error handling
     def bad_visit(self, node):
-        raise Exception(f"visit_{node.data} is not implemented.")
+        raise TreeError(node)
 
     ## Start and Block
     def visit_start(self, node):
@@ -37,7 +39,7 @@ class Interpreter:
         if node.type == "INT":
             return int(node)
         elif node.type == "ID":
-            return self.env.get_variable(node.value)
+            return self.env.get_variable(node.value, line=node.line)
         elif node.type == "FLOAT":
             return float(node)
         elif node.type == "STRING":
@@ -45,7 +47,7 @@ class Interpreter:
         elif node.type == "BOOLEAN":
             return node.value == "true"
         else:
-            raise Exception(f"Unknown type: {node.type}")
+            raise TreeError(node)
 
     # Unary expressions
     def visit_uminus(self, node):
@@ -73,9 +75,8 @@ class Interpreter:
             elif operator == "+":
                 result += operand
             else:
-                raise Exception(
-                    f"Unsupported operator: {operator}, expected *, /, %, + or -"
-                )
+                raise OperatorError(operator, node.line, "arithmetic")
+
         return result
 
     def visit_compare_expr(self, node):
@@ -95,9 +96,7 @@ class Interpreter:
         elif operator == ">=":
             return value1 >= value2
         else:
-            raise Exception(
-                f"Unsupported operator: {operator}, expected ==, !=, <, >, <=, or >=."
-            )
+            raise OperatorError(operator, node.line, "comparison")
 
     def visit_logical_expr(self, node):
         result = self.visit(node.children[0])
@@ -109,7 +108,7 @@ class Interpreter:
             elif op == "or":
                 result = result or rhs
             else:
-                raise Exception(f"Unknown logical op '{op}'")
+                raise OperatorError(op, node.line, "logical")
         return result
 
     ## Statements
@@ -121,27 +120,25 @@ class Interpreter:
         name_tok = node.children[1]
         sizes, idx = self.collect_sizes(node.children, 2)
         has_value = idx < len(node.children)
-        self.env.declare_variable(name_tok.value, type_tok.value, sizes)
+        self.env.declare_variable(name_tok.value, type_tok.value, sizes, line=node.children[1].line)
         if has_value:
             value = self.visit(node.children[idx])
             if sizes and not isinstance(value, list):
-                raise Exception(
-                    f"Cannot assign {value} to array variable {name_tok}."
-                )
-            self.env.set_variable(name_tok.value, value)
+                raise ArrayDimensionError(node.children[0].line)
+            self.env.set_variable(name_tok.value, value, line=node.children[0].line)
 
     def visit_assignment_stmt(self, node):
         name_tok = node.children[0].children[0]
         value = self.visit(node.children[1])
         index_depth = len(node.children[0].children) - 1
         if index_depth == 0:
-            self.env.set_variable(name_tok.value, value)
+            self.env.set_variable(name_tok.value, value, line=name_tok.line)
         else:
             index_list = [
                 self.visit(node.children[0].children[i + 1])
                 for i in range(index_depth)
             ]
-            self.env.set_variable(name_tok.value, value, index_list)
+            self.env.set_variable(name_tok.value, value, index_list, line=name_tok.line)
 
     def visit_if_stmt(self, node):
         condition = node.children[0]
@@ -214,7 +211,7 @@ class Interpreter:
             )
         elif suffix.data == "array_access_suffix":
             indices = [self.visit(child) for child in node.children[1:]]
-            return self.env.get_variable(name_tok.value, indices)
+            return self.env.get_variable(name_tok.value, indices, line=name_tok.line)
         return None
 
     def visit_array_suffix(self, node):
@@ -265,7 +262,7 @@ class Interpreter:
             expr_node = children[i].children[0]       # INT, ID, or expr
             size_val = self.visit(expr_node)          # run-time evaluation
             if not isinstance(size_val, int):
-                raise Exception("Array size must evaluate to an integer")
+                raise ArrayIndexError(expr_node.line, expr_node.column)
             sizes.append(size_val)
             i += 1
         return sizes, i

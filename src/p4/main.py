@@ -30,7 +30,7 @@ def main():
         print("Parsing error:", e)
         return
 
-    SemanticsChecker().run(processed_tree)
+    #SemanticsChecker().run(processed_tree)
 
     interpreter = Interpreter()
     interpreter.visit(processed_tree)
