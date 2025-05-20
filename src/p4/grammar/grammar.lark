@@ -19,7 +19,6 @@ block: "{" NEWLINE* (stmt (NEWLINE+ stmt)*)? NEWLINE* "}"
      | while_stmt
      | return_stmt
      | output_stmt
-     | expr_stmt
 
 lvalue: ID array_access_suffix*
 assignment_stmt: lvalue "=" expr
@@ -28,7 +27,6 @@ if_stmt: _IF expr _THEN block [_ELSE block]
 while_stmt: _WHILE expr _DO block
 return_stmt: _RETURN expr
 output_stmt: _OUTPUT expr
-expr_stmt: expr
 
 input_expr: _INPUT
 ?expr: or_expr

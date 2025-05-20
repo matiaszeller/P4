@@ -93,8 +93,8 @@ class ParseTreeProcessor(Transformer):
     def lvalue(self, items): return Tree('lvalue', items)
     def expr_stmt(self, items): return Tree('expr_stmt', items)
 
-    def add_expr(self, items): return Tree('arit_expr', items)
-    def mul_expr(self, items): return Tree('arit_expr', items)
+    def add_expr(self, items): return self.arit_expr(items)
+    def mul_expr(self, items): return self.arit_expr(items)
 
     def arit_expr(self, items):
         if len(items) == 1:
