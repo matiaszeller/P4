@@ -234,9 +234,15 @@ class SemanticsChecker:
         if self.current_return_type is None:
             raise StructureError("return outside function")
 
-        actual = self.visit(n.children[0])
-        if not self.compatible(actual, self.current_return_type):
-            raise TypeError_("Return type mismatch")
+        if self.current_return_type == "noType":
+            if len(n.children) != 0:
+                raise StructureError("noType functions not allowed to return anything")
+            else:
+                return
+        else:
+            actual = self.visit(n.children[0])
+            if not self.compatible(actual, self.current_return_type):
+                raise TypeError_("Return type mismatch")
 
         self.seen_returns.append(actual)
 
