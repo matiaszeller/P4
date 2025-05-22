@@ -120,7 +120,7 @@ class SemanticsChecker:
 
         # Non-void functions must guarantee a return on every path
         if return_type != "noType" and not self.body_guarantees_return(body):
-            raise StructureError(f"Function '{function_name}' may exit without returning a value")
+                raise StructureError(f"Function '{function_name}' may exit without returning a value")
 
         # Restore outer context
         self.variable_map = outer_vars
@@ -422,7 +422,7 @@ class SemanticsChecker:
             return False
         if node.data == "if_stmt":
             then_ok = self.body_guarantees_return(node.children[1])
-            else_ok = False
+            else_ok = True
             if len(node.children) == 3:
                 else_ok = self.body_guarantees_return(node.children[2])
             # Both branches must guarantee return
