@@ -26,7 +26,7 @@ assignment_stmt: lvalue "=" expr
 declaration_stmt: _NEW TYPE ID array_suffix* ["=" expr]
 if_stmt: _IF expr _THEN block [_ELSE block]
 while_stmt: _WHILE expr _DO block
-return_stmt: _RETURN expr
+return_stmt: _RETURN [expr]
 output_stmt: _OUTPUT expr
 expr_stmt: expr
 

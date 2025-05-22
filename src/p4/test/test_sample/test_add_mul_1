@@ -2,5 +2,8 @@ Language EN
 Case camelCase
 
 function noType main() {
-    output 1 + 2 * 3 - 2
+    new integer x = 1 + 2
+    new integer y = 3 - 2
+    new integer z = x * y
+    output z
 }

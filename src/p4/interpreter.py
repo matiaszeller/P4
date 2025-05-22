@@ -29,7 +29,9 @@ class Interpreter:
     def visit_block(self, node):
         for child in node.children:
             result = self.visit(child)
-            if result is not None:
+            if result == "FLAG_XXXXXXXXXXXXXXXX":
+                break
+            elif result is not None:
                 return result
         return None
 
@@ -159,6 +161,8 @@ class Interpreter:
             self.visit(block)
 
     def visit_return_stmt(self, node):
+        if len(node.children) == 0:
+            return "FLAG_XXXXXXXXXXXXXXXX"
         return self.visit(node.children[0])
 
     ## User Interactions
