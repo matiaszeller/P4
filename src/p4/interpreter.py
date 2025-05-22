@@ -234,7 +234,7 @@ class Interpreter:
 
     ## Syntax
     def visit_syntax(self, node):
-        print(f"You are programming in {node.children[0]} using {node.children[1]}\n")
+        return
 
     ## Helper Functions
     def has_value(self, node):
