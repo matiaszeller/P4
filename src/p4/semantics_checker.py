@@ -669,3 +669,6 @@ class SemanticsChecker:
                 if line:
                     return line
         return None
+
+    def get_base_type(self, children, idx0):
+        return children[idx0].value

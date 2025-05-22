@@ -1,36 +1,18 @@
 Language EN
 Case camelCase
 
-function integer add() {
-    new integer result = 0
-    result = 2 + 3 * 4
-    output result
-    return result
+
+function noType accepting( integer x) {
+    new integer y = 3 + x
+    output y
 }
 
+
 function noType main() {
-    new integer a
-    a = 10
-    output a
-
-    new integer matrix[3][3]
-    matrix[0][0] = 5
-    matrix[1][2] = 15
-    output matrix[0][0]
-    output matrix[1][2]
-
-    new integer i = 0
-    while i < 3 do {
-        output i
-        i = i + 1
-    }
-
-    if a > 5 then {
-        output 100
-    } else {
-        output 200
-    }
-
-    new integer sum = add()
-    output sum
+    new integer f = 5
+    accepting(f)
+}
+function noType bottomFunction() {
+    new integer r = 4
+    output r
 }
