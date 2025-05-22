@@ -659,3 +659,391 @@ class test_compare_expr(unittest.TestCase):
         ]))
         with self.assertRaises(TypeError_):
             self.semantics_checker.visit_compare_expr(node)
+
+    def test_smaller_integer(self):
+        node = (DummyNode('compare_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '<'),
+            Token('INT', '1')
+        ]))
+        result = self.semantics_checker.visit_compare_expr(node)
+        self.assertEqual(result, 'boolean')
+
+    def test_smaller_decimal(self):
+        node = (DummyNode('compare_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '<'),
+            Token('FLOAT', '1.5')
+        ]))
+        result = self.semantics_checker.visit_compare_expr(node)
+        self.assertEqual(result, 'boolean')
+
+    def test_smaller_string(self):
+        node = (DummyNode('compare_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '<'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_smaller_boolean(self):
+        node = (DummyNode('compare_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '<'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_smaller_int_dec(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '<'),
+            Token('FLOAT', '2.5')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_smaller_int_str(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '<'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_smaller_int_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '<'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_smaller_dec_str(self):
+        node = (DummyNode('arit_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '<'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_smaller_dec_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '<'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_smaller_str_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '<'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_smaller_equal_integer(self):
+        node = (DummyNode('compare_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '<='),
+            Token('INT', '1')
+        ]))
+        result = self.semantics_checker.visit_compare_expr(node)
+        self.assertEqual(result, 'boolean')
+
+
+    def test_smaller_equal_decimal(self):
+        node = (DummyNode('compare_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '<='),
+            Token('FLOAT', '1.5')
+        ]))
+        result = self.semantics_checker.visit_compare_expr(node)
+        self.assertEqual(result, 'boolean')
+
+
+    def test_smaller_equal_string(self):
+        node = (DummyNode('compare_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '<='),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_smaller_equal_boolean(self):
+        node = (DummyNode('compare_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '<='),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_smaller_equal_int_dec(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '<='),
+            Token('FLOAT', '2.5')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_smaller_equal_int_str(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '<='),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_smaller_equal_int_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '<='),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_smaller_equal_dec_str(self):
+        node = (DummyNode('arit_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '<='),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_smaller_equal_dec_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '<='),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_smaller_equal_str_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '<='),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_greater_integer(self):
+        node = (DummyNode('compare_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '>'),
+            Token('INT', '1')
+        ]))
+        result = self.semantics_checker.visit_compare_expr(node)
+        self.assertEqual(result, 'boolean')
+
+    def test_greater_decimal(self):
+        node = (DummyNode('compare_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '>'),
+            Token('FLOAT', '1.5')
+        ]))
+        result = self.semantics_checker.visit_compare_expr(node)
+        self.assertEqual(result, 'boolean')
+
+    def test_greater_string(self):
+        node = (DummyNode('compare_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '>'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_greater_boolean(self):
+        node = (DummyNode('compare_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '>'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_greater_int_dec(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '>'),
+            Token('FLOAT', '2.5')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_greater_int_str(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '>'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_greater_int_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '>'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_greater_dec_str(self):
+        node = (DummyNode('arit_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '<'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_greater_dec_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '>'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_greater_str_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '>'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+    def test_greater_equal_integer(self):
+        node = (DummyNode('compare_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '>='),
+            Token('INT', '1')
+        ]))
+        result = self.semantics_checker.visit_compare_expr(node)
+        self.assertEqual(result, 'boolean')
+
+
+    def test_greater_equal_decimal(self):
+        node = (DummyNode('compare_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '>='),
+            Token('FLOAT', '1.5')
+        ]))
+        result = self.semantics_checker.visit_compare_expr(node)
+        self.assertEqual(result, 'boolean')
+
+
+    def test_greater_equal_string(self):
+        node = (DummyNode('compare_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '>='),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_greater_equal_boolean(self):
+        node = (DummyNode('compare_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '>='),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_greater_equal_int_dec(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '>='),
+            Token('FLOAT', '2.5')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_greater_equal_int_str(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '>='),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_greater_equal_int_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '1'),
+            Token('EQ_OP', '>='),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_greater_equal_dec_str(self):
+        node = (DummyNode('arit_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '>='),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_greater_equal_dec_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('FLOAT', '1.5'),
+            Token('EQ_OP', '>='),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+    def test_greater_equal_str_bool(self):
+        node = (DummyNode('arit_expr', [
+            Token('STRING', '"Hi"'),
+            Token('EQ_OP', '>='),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_compare_expr(node)
+
+
+class test_logical_expr(unittest.TestCase):
+    def setUp(self):
+        class TestSemantics(SemanticsChecker):
+            def visit(self, node):
+                return super().visit(node)
+        self.semantics_checker = TestSemantics()
+
+    def test_and_expr_integer
