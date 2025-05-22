@@ -1,5 +1,5 @@
 from lark import Tree, Token
-from environment import Environment
+from src.p4.environment import Environment
 import ast
 
 class Interpreter:

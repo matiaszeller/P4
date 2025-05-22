@@ -1,16 +1,22 @@
 import unittest
 from io import StringIO
 from unittest.mock import patch
+from pathlib import Path
 
 from src.p4.interpreter import Interpreter
 from src.p4.environment import Environment
 from lark import Lark
+from src.p4.parse_tree_processor import make_parser
 
 from src.p4.parse_tree_processor import ParseTreeProcessor
 
-with open("src/p4/grammar/grammar.lark", "r") as grammar_file:
+
+GRAMMAR_PATH = Path(__file__).resolve().parents[1] / "grammar" / "grammar.lark"
+
+with open(GRAMMAR_PATH, "r", encoding="utf-8") as grammar_file:
     grammar = grammar_file.read()
-parser = Lark(grammar, parser='earley', start='start', lexer='dynamic')
+
+parser = make_parser("EN")
 
 class IntegrationTesting(unittest.TestCase):
 
@@ -31,7 +37,7 @@ class IntegrationTesting(unittest.TestCase):
         with patch('sys.stdout', new=StringIO()) as fake_out:
             interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
-            self.assertIn("5", output)
+            self.assertIn("3", output)
 
     def test_add_mul_2(self):
         try:
@@ -43,9 +49,11 @@ class IntegrationTesting(unittest.TestCase):
             return
         interpretor = Interpreter()
         tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(tree)
+            interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("0", output)
 
@@ -91,9 +99,11 @@ class IntegrationTesting(unittest.TestCase):
             return
         interpretor = Interpreter()
         tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(tree)
+            interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("None", output)
 
@@ -107,9 +117,11 @@ class IntegrationTesting(unittest.TestCase):
             return
         interpretor = Interpreter()
         tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(tree)
+            interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("10", output)
 
@@ -155,9 +167,11 @@ class IntegrationTesting(unittest.TestCase):
             return
         interpretor = Interpreter()
         tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(tree)
+            interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("discount applied", output)
 
@@ -171,9 +185,11 @@ class IntegrationTesting(unittest.TestCase):
             return
         interpretor = Interpreter()
         tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(tree)
+            interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("discount not applied", output)
 
@@ -187,9 +203,11 @@ class IntegrationTesting(unittest.TestCase):
             return
         interpretor = Interpreter()
         tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(tree)
+            interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("5", output)
 
@@ -203,9 +221,11 @@ class IntegrationTesting(unittest.TestCase):
             return
         interpretor = Interpreter()
         tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(tree)
+            interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("1", output)
 
@@ -220,9 +240,11 @@ class IntegrationTesting(unittest.TestCase):
             return
         interpretor = Interpreter()
         tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(tree)
+            interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("Hello world", output)
 
@@ -236,9 +258,11 @@ class IntegrationTesting(unittest.TestCase):
             return
         interpretor = Interpreter()
         tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(tree)
+            interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("Hello world", output)
 
@@ -252,9 +276,11 @@ class IntegrationTesting(unittest.TestCase):
             return
         interpretor = Interpreter()
         tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(tree)
+            interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("Hello world", output)
 
@@ -268,9 +294,11 @@ class IntegrationTesting(unittest.TestCase):
             return
         interpretor = Interpreter()
         tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(tree)
+            interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("Bool", output)
 

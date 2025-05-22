@@ -46,7 +46,8 @@ TYPE_MAP = {
 GRAMMAR_PATH = Path(__file__).resolve().parents[2] / "src" / "p4" / "grammar" / "grammar.lark"
 
 with open(GRAMMAR_PATH, "r", encoding="utf-8") as grammar_file:
-    grammar = grammar_file.read()
+    BASE_GRAMMAR = grammar_file.read()
+
 
 HEADER_RE = re.compile(r"^Language\s+(EN|DK)\s*$", re.IGNORECASE)
 
