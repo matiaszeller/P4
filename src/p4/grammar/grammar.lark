@@ -5,7 +5,7 @@
 %ignore WS_INLINE
 %ignore COMMENT
 
-start: syntax NEWLINE* function_definition (NEWLINE* function_definition)*
+start: syntax NEWLINE* function_definition (NEWLINE* function_definition)* https://github.com/matiaszeller/P4/pull/11
 
 syntax: "Language" LANG NEWLINE "Case" CASE NEWLINE
 
