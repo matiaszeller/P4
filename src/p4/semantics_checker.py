@@ -628,7 +628,7 @@ class SemanticsChecker:
             return False
         if node.data == "if_stmt":
             then_ok = self.body_guarantees_return(node.children[1])
-            else_ok = False
+            else_ok = True
             if len(node.children) == 3:
                 else_ok = self.body_guarantees_return(node.children[2])
             # Both branches must guarantee return
