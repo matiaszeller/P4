@@ -2,7 +2,7 @@ Language EN
 Case camelCase
 
 
-function noType accepting_Case( integer x) {
+function noType acceptingCase( integer x) {
     new integer y = 3 + x
     output y
 }
