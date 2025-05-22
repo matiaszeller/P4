@@ -2,7 +2,8 @@ Language EN
 Case camelCase
 
 
-function noType accepting( integer x) {
+function noType accepting_Case( integer x) {
+
     new integer y = 3 + x
     output y
 }
@@ -10,9 +11,5 @@ function noType accepting( integer x) {
 
 function noType main() {
     new integer f = 5
-    accepting(f)
-}
-function noType bottomFunction() {
-    new integer r = 4
-    output r
+    acceptingCase(f)
 }

@@ -234,6 +234,7 @@ class SemanticsChecker:
     def visit_function_definition(self, node: Tree):
         return_type = self.get_base_type(node.children, 0)
         function_name = node.children[1].value
+        self.check_case(function_name)
         parameters_node = None  # look for a child node representing parameter declarations
         for child in node.children:
             if isinstance(child, Tree) and child.data == "params":
