@@ -23,7 +23,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_add_mul_1(self):
         try:
             # open test source
-            with open("test_sample/test_add_mul_1", "r") as src_file:
+            with open("test_sample_old/test_add_mul_1", "r") as src_file:
                 sample_input = src_file.read()
                 print(sample_input)
         except FileNotFoundError:
@@ -42,7 +42,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_add_mul_2(self):
         try:
             # open test source
-            with open("test_sample/test_add_mul_2", "r") as src_file:
+            with open("test_sample_old/test_add_mul_2", "r") as src_file:
                 sample_input = src_file.read()
         except FileNotFoundError:
             print("Error reading file")
@@ -92,7 +92,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_declaration(self):
         try:
             # open test source
-            with open("test_sample/test_decl", "r") as src_file:
+            with open("test_sample_old/test_decl", "r") as src_file:
                 sample_input = src_file.read()
         except FileNotFoundError:
             print("Error reading file")
@@ -110,7 +110,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_decl_assign(self):
         try:
             # open test source
-            with open("test_sample/test_decl_assign", "r") as src_file:
+            with open("test_sample_old/test_decl_assign", "r") as src_file:
                 sample_input = src_file.read()
         except FileNotFoundError:
             print("Error reading file")
@@ -160,7 +160,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_if(self):
         try:
             # open test source
-            with open("test_sample/test_if", "r") as src_file:
+            with open("test_sample_old/test_if", "r") as src_file:
                 sample_input = src_file.read()
         except FileNotFoundError:
             print("Error reading file")
@@ -178,7 +178,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_else(self):
         try:
             # open test source
-            with open("test_sample/test_else", "r") as src_file:
+            with open("test_sample_old/test_else", "r") as src_file:
                 sample_input = src_file.read()
         except FileNotFoundError:
             print("Error reading file")
@@ -196,7 +196,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_while_true(self):
         try:
             # open test source
-            with open("test_sample/test_while_true", "r") as src_file:
+            with open("test_sample_old/test_while_true", "r") as src_file:
                 sample_input = src_file.read()
         except FileNotFoundError:
             print("Error reading file")
@@ -214,7 +214,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_while_false(self):
         try:
             # open test source
-            with open("test_sample/test_while_false", "r") as src_file:
+            with open("test_sample_old/test_while_false", "r") as src_file:
                 sample_input = src_file.read()
         except FileNotFoundError:
             print("Error reading file")
@@ -233,7 +233,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_function_call_cc(self):
         try:
             # open test source
-            with open("test_sample/test_function_call_cc", "r") as src_file:
+            with open("test_sample_old/test_function_call_cc", "r") as src_file:
                 sample_input = src_file.read()
         except FileNotFoundError:
             print("Error reading file")
@@ -251,7 +251,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_function_call_sc(self):
         try:
             # open test source
-            with open("test_sample/test_function_call_sc", "r") as src_file:
+            with open("test_sample_old/test_function_call_sc", "r") as src_file:
                 sample_input = src_file.read()
         except FileNotFoundError:
             print("Error reading file")
@@ -269,7 +269,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_case_fail(self):
         try:
             # open test source
-            with open("test_sample/test_case_fail", "r") as src_file:
+            with open("test_sample_old/test_case_fail", "r") as src_file:
                 sample_input = src_file.read()
         except FileNotFoundError:
             print("Error reading file")
@@ -287,7 +287,7 @@ class IntegrationTesting(unittest.TestCase):
     def test_bool_literal_true(self):
         try:
             # open test source
-            with open("test_sample/test_bool_literal_true", "r") as src_file:
+            with open("test_sample_old/test_bool_literal_true", "r") as src_file:
                 sample_input = src_file.read()
         except FileNotFoundError:
             print("Error reading file")

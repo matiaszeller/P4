@@ -31,14 +31,8 @@ class test_uminus(unittest.TestCase):
             Token('UMINUS', '-'),
             Token('FLOAT', '5.5')
         ]))
-
-    #def test_uminus_fail(self):
-    #    node = (DummyNode('uminus', [
-    #        Token('UMINUS', '-'),
-    #        Token('STRING', '"Hi"')
-    #    ]))
-    #    result = self.interpreter.visit_uminus(node)
-    #    self.assertEqual(result, -"Hi")
+        result = self.interpreter.visit_uminus(node)
+        self.assertEqual(result, -5.5)
 
 
 class test_negate(unittest.TestCase):
@@ -61,13 +55,6 @@ class test_negate(unittest.TestCase):
         ]))
         result = self.interpreter.visit_negate(node)
         self.assertEqual(result, True)
-
-    #def test_negate_fail(self):
-    #    node = (DummyNode('negate', [
-    #        Token('INT', '5')
-    #    ]))
-    #    result = self.interpreter.visit_negate(node)
-    #    self.assertEqual(result, False)
 
 
 class test_arit_expr(unittest.TestCase):
@@ -94,16 +81,6 @@ class test_arit_expr(unittest.TestCase):
         ]))
         result = self.interpreter.visit_arit_expr(node)
         self.assertEqual(result, 3.75)
-
-
-    #def test_multiplication_string_fail(self):
-    #    node = (DummyNode('arit_expr',[
-    #        Token('STRING', '"Hello"'),
-    #        Token('MUL_OP', '*'),
-    #        Token('STRING', '" World"')
-    #    ]))
-    #    result = self.interpreter.visit_arit_expr(node)
-    #    self.assertEqual(result, 3.75)
 
     def test_division_integer(self):
         node = (DummyNode('arit_expr', [
@@ -384,7 +361,7 @@ class test_compare_expr(unittest.TestCase):
         result = self.interpreter.visit_compare_expr(node)
         self.assertEqual(result, True)
 
-    def test_smaller_equal_integer_2_true(self):
+    def test_smaller_equal_decimal_2_true(self):
         node = (DummyNode('compare_expr', [
             Token('FLOAT', '1.5'),
             Token('REL_OP', '<='),
@@ -438,7 +415,7 @@ class test_compare_expr(unittest.TestCase):
         result = self.interpreter.visit_compare_expr(node)
         self.assertEqual(result, True)
 
-    def test_greater_equal_integer_2_true(self):
+    def test_greater_equal_decimal_2_true(self):
         node = (DummyNode('compare_expr', [
             Token('FLOAT', '2.5'),
             Token('REL_OP', '>='),

@@ -958,7 +958,6 @@ class test_compare_expr(unittest.TestCase):
         result = self.semantics_checker.visit_compare_expr(node)
         self.assertEqual(result, 'boolean')
 
-
     def test_greater_equal_string(self):
         node = (DummyNode('compare_expr', [
             Token('STRING', '"Hi"'),
@@ -988,7 +987,6 @@ class test_compare_expr(unittest.TestCase):
         with self.assertRaises(TypeError_):
             self.semantics_checker.visit_compare_expr(node)
 
-
     def test_greater_equal_int_str(self):
         node = (DummyNode('arit_expr', [
             Token('INT', '1'),
@@ -998,9 +996,8 @@ class test_compare_expr(unittest.TestCase):
         with self.assertRaises(TypeError_):
             self.semantics_checker.visit_compare_expr(node)
 
-
     def test_greater_equal_int_bool(self):
-        node = (DummyNode('arit_expr', [
+        node = (DummyNode('compare_expr', [
             Token('INT', '1'),
             Token('EQ_OP', '>='),
             Token('BOOLEAN', 'true')
@@ -1008,9 +1005,8 @@ class test_compare_expr(unittest.TestCase):
         with self.assertRaises(TypeError_):
             self.semantics_checker.visit_compare_expr(node)
 
-
     def test_greater_equal_dec_str(self):
-        node = (DummyNode('arit_expr', [
+        node = (DummyNode('compare_expr', [
             Token('FLOAT', '1.5'),
             Token('EQ_OP', '>='),
             Token('STRING', '"Hi"')
@@ -1018,9 +1014,8 @@ class test_compare_expr(unittest.TestCase):
         with self.assertRaises(TypeError_):
             self.semantics_checker.visit_compare_expr(node)
 
-
     def test_greater_equal_dec_bool(self):
-        node = (DummyNode('arit_expr', [
+        node = (DummyNode('compare_expr', [
             Token('FLOAT', '1.5'),
             Token('EQ_OP', '>='),
             Token('BOOLEAN', 'true')
@@ -1028,16 +1023,14 @@ class test_compare_expr(unittest.TestCase):
         with self.assertRaises(TypeError_):
             self.semantics_checker.visit_compare_expr(node)
 
-
     def test_greater_equal_str_bool(self):
-        node = (DummyNode('arit_expr', [
+        node = (DummyNode('compare_expr', [
             Token('STRING', '"Hi"'),
             Token('EQ_OP', '>='),
             Token('BOOLEAN', 'true')
         ]))
         with self.assertRaises(TypeError_):
             self.semantics_checker.visit_compare_expr(node)
-
 
 class test_logical_expr(unittest.TestCase):
     def setUp(self):
@@ -1046,4 +1039,47 @@ class test_logical_expr(unittest.TestCase):
                 return super().visit(node)
         self.semantics_checker = TestSemantics()
 
-    def test_and_expr_integer
+    def test_and_expr_integer(self):
+        node = (DummyNode('logical_expr', [
+            Token('INT', '1'),
+            Token('LOGIC_OP', 'and'),
+            Token('INT', '1')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_and_expr_decimal(self):
+        node = (DummyNode('logical_expr', [
+            Token('FLOAT', '1.5'),
+            Token('LOGIC_OP', 'and'),
+            Token('FLOAT', '1.5')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_and_expr_string(self):
+        node = (DummyNode('logical_expr', [
+            Token('STRING', '"Hi"'),
+            Token('LOGIC_OP', 'and'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_and_expr_boolean(self):
+        node = (DummyNode('logical_expr', [
+            Token('BOOLEAN', 'true'),
+            Token('LOGIC_OP', 'and'),
+            Token('BOOLEAN', 'true')
+        ]))
+        result = self.semantics_checker.visit_logical_expr(node)
+        self.assertEqual(result, 'boolean')
+
+    def test_and_expr_boolean(self):
+        node = (DummyNode('logical_expr', [
+            Token('BOOLEAN', 'true'),
+            Token('LOGIC_OP', 'and'),
+            Token('BOOLEAN', 'true')
+        ]))
+        result = self.semantics_checker.visit_logical_expr(node)
+        self.assertEqual(result, 'boolean')
