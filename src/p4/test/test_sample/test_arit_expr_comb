@@ -2,5 +2,5 @@ Language EN
 Case camelCase
 
 function noType main() {
-    output 5 - 2 * 5 / 2
+    output 1 + 2 * 3
 }

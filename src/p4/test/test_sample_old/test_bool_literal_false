@@ -1,8 +1,0 @@
-Language EN
-Case camelCase
-
-function noType main(){
-    while false do {
-        output "This won't print"
-    }
-}

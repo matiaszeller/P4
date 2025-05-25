@@ -1,9 +1,0 @@
-Language EN
-Case camelCase
-
-function noType main() {
-    new integer x = 1 + 2
-    new integer y = 3 - 2
-    new integer z = x * y
-    output z
-}
