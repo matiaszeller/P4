@@ -15,6 +15,8 @@ KEYWORDS = {
         RETURN="return",
         OUTPUT="output",
         INPUT="input",
+        OR="or",
+        AND="and"
     ),
     "DK": dict(
         FUNCTION="funktion",
@@ -27,6 +29,8 @@ KEYWORDS = {
         RETURN="returner",
         OUTPUT="udskriv",
         INPUT="indskriv",
+        OR="eller",
+        AND="og"
     ),
 }
 
