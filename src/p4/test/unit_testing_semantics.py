@@ -509,12 +509,12 @@ class test_compare_expr(unittest.TestCase):
 
     def test_equal_boolean(self):
         node = (DummyNode('compare_expr', [
-            Token('STRING', '"Hi"'),
+            Token('BOOLEAN', 'true'),
             Token('EQ_OP', '=='),
             Token('BOOLEAN', 'true')
         ]))
-        with self.assertRaises(TypeError_):
-            self.semantics_checker.visit_compare_expr(node)
+        result = self.semantics_checker.visit_compare_expr(node)
+        self.assertEqual(result, 'boolean')
 
     def test_equal_int_dec(self):
         node = (DummyNode('arit_expr', [
@@ -599,12 +599,12 @@ class test_compare_expr(unittest.TestCase):
 
     def test_not_equal_boolean(self):
         node = (DummyNode('compare_expr', [
-            Token('STRING', '"Hi"'),
+            Token('BOOLEAN', 'true'),
             Token('EQ_OP', '!='),
             Token('BOOLEAN', 'true')
         ]))
-        with self.assertRaises(TypeError_):
-            self.semantics_checker.visit_compare_expr(node)
+        result = self.semantics_checker.visit_compare_expr(node)
+        self.assertEqual(result, 'boolean')
 
     def test_not_equal_int_dec(self):
         node = (DummyNode('arit_expr', [
@@ -689,7 +689,7 @@ class test_compare_expr(unittest.TestCase):
 
     def test_smaller_boolean(self):
         node = (DummyNode('compare_expr', [
-            Token('STRING', '"Hi"'),
+            Token('BOOLEAN', 'true'),
             Token('EQ_OP', '<'),
             Token('BOOLEAN', 'true')
         ]))
@@ -782,7 +782,7 @@ class test_compare_expr(unittest.TestCase):
 
     def test_smaller_equal_boolean(self):
         node = (DummyNode('compare_expr', [
-            Token('STRING', '"Hi"'),
+            Token('BOOLEAN', 'true'),
             Token('EQ_OP', '<='),
             Token('BOOLEAN', 'true')
         ]))
@@ -878,7 +878,7 @@ class test_compare_expr(unittest.TestCase):
 
     def test_greater_boolean(self):
         node = (DummyNode('compare_expr', [
-            Token('STRING', '"Hi"'),
+            Token('BOOLEAN', 'true'),
             Token('EQ_OP', '>'),
             Token('BOOLEAN', 'true')
         ]))
@@ -970,7 +970,7 @@ class test_compare_expr(unittest.TestCase):
 
     def test_greater_equal_boolean(self):
         node = (DummyNode('compare_expr', [
-            Token('STRING', '"Hi"'),
+            Token('BOOLEAN', 'true'),
             Token('EQ_OP', '>='),
             Token('BOOLEAN', 'true')
         ]))
@@ -1075,11 +1075,146 @@ class test_logical_expr(unittest.TestCase):
         result = self.semantics_checker.visit_logical_expr(node)
         self.assertEqual(result, 'boolean')
 
-    def test_and_expr_boolean(self):
+    def test_and_expr_int_dec(self):
+        node = (DummyNode('logical_expr', [
+            Token('INT', '1'),
+            Token('LOGIC_OP', 'and'),
+            Token('FLOAT', '1.5')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_and_expr_int_str(self):
+        node = (DummyNode('logical_expr', [
+            Token('INT', '1'),
+            Token('LOGIC_OP', 'and'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_and_expr_int_bool(self):
+        node = (DummyNode('logical_expr', [
+            Token('INT', '1'),
+            Token('LOGIC_OP', 'and'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_and_expr_dec_str(self):
+        node = (DummyNode('logical_expr', [
+            Token('FLOAT', '1.5'),
+            Token('LOGIC_OP', 'and'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_and_expr_dec_bool(self):
+        node = (DummyNode('logical_expr', [
+            Token('FLOAT', '1.5'),
+            Token('LOGIC_OP', 'and'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_and_expr_str_bool(self):
+        node = (DummyNode('logical_expr', [
+            Token('FLOAT', '1.5'),
+            Token('LOGIC_OP', 'and'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_or_expr_integer(self):
+        node = (DummyNode('logical_expr', [
+            Token('INT', '1'),
+            Token('LOGIC_OP', 'or'),
+            Token('INT', '1')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_or_expr_decimal(self):
+        node = (DummyNode('logical_expr', [
+            Token('FLOAT', '1.5'),
+            Token('LOGIC_OP', 'or'),
+            Token('FLOAT', '1.5')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_or_expr_string(self):
+        node = (DummyNode('logical_expr', [
+            Token('STRING', '"Hi"'),
+            Token('LOGIC_OP', 'or'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_or_expr_boolean(self):
         node = (DummyNode('logical_expr', [
             Token('BOOLEAN', 'true'),
-            Token('LOGIC_OP', 'and'),
+            Token('LOGIC_OP', 'or'),
             Token('BOOLEAN', 'true')
         ]))
         result = self.semantics_checker.visit_logical_expr(node)
         self.assertEqual(result, 'boolean')
+
+    def test_or_expr_int_dec(self):
+        node = (DummyNode('logical_expr', [
+            Token('INT', '1'),
+            Token('LOGIC_OP', 'or'),
+            Token('FLOAT', '1.5')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_or_expr_int_str(self):
+        node = (DummyNode('logical_expr', [
+            Token('INT', '1'),
+            Token('LOGIC_OP', 'or'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_or_expr_int_bool(self):
+        node = (DummyNode('logical_expr', [
+            Token('INT', '1'),
+            Token('LOGIC_OP', 'or'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_or_expr_dec_str(self):
+        node = (DummyNode('logical_expr', [
+            Token('FLOAT', '1.5'),
+            Token('LOGIC_OP', 'or'),
+            Token('STRING', '"Hi"')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_or_expr_dec_bool(self):
+        node = (DummyNode('logical_expr', [
+            Token('FLOAT', '1.5'),
+            Token('LOGIC_OP', 'or'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)
+
+    def test_or_expr_str_bool(self):
+        node = (DummyNode('logical_expr', [
+            Token('STRING', '"Hi"'),
+            Token('LOGIC_OP', 'or'),
+            Token('BOOLEAN', 'true')
+        ]))
+        with self.assertRaises(TypeError_):
+            self.semantics_checker.visit_logical_expr(node)

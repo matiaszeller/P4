@@ -100,14 +100,14 @@ class test_arit_expr(unittest.TestCase):
         result = self.interpreter.visit_arit_expr(node)
         self.assertEqual(result, 4.2)
 
-    #def test_division_zero(self):
-    #    node = (DummyNode('arit_expr', [
-    #        Token('INT', '10'),
-    #        Token('MUL_OP', '/'),
-    #        Token('INT', '0')
-    #    ]))
-    #    result = self.interpreter.visit_arit_expr(node)
-    #    self.assertEqual(result, 5)
+    def test_division_zero(self):
+        node = (DummyNode('arit_expr', [
+            Token('INT', '10'),
+            Token('MUL_OP', '/'),
+            Token('INT', '0')
+        ]))
+        with self.assertRaises(ZeroDivisionError):
+            self.interpreter.visit_arit_expr(node)
 
     def test_modulo_integer(self):
         node = (DummyNode('arit_expr', [
@@ -234,6 +234,24 @@ class test_compare_expr(unittest.TestCase):
         result = self.interpreter.visit_compare_expr(node)
         self.assertEqual(result, False)
 
+    def test_equal_boolean_true(self):
+        node = (DummyNode('compare_expr', [
+            Token('BOOLEAN', 'true'),
+            Token('EQ_OP', '=='),
+            Token('BOOLEAN', 'true')
+        ]))
+        result = self.interpreter.visit_compare_expr(node)
+        self.assertEqual(result, True)
+
+    def test_equal_boolean_false(self):
+        node = (DummyNode('compare_expr', [
+            Token('BOOLEAN', 'true'),
+            Token('EQ_OP', '=='),
+            Token('BOOLEAN', 'false')
+        ]))
+        result = self.interpreter.visit_compare_expr(node)
+        self.assertEqual(result, False)
+
     def test_not_equal_integer_true(self):
         node = (DummyNode('compare_expr', [
             Token('INT', '1'),
@@ -279,12 +297,29 @@ class test_compare_expr(unittest.TestCase):
         result = self.interpreter.visit_compare_expr(node)
         self.assertEqual(result, True)
 
-
     def test_not_equal_string_false(self):
         node = (DummyNode('compare_expr', [
             Token('STRING', '"Hi"'),
             Token('EQ_OP', '!='),
             Token('STRING', '"Hi"')
+        ]))
+        result = self.interpreter.visit_compare_expr(node)
+        self.assertEqual(result, False)
+
+    def test_not_equal_boolean_true(self):
+        node = (DummyNode('compare_expr', [
+            Token('BOOLEAN', 'true'),
+            Token('EQ_OP', '!='),
+            Token('BOOLEAN', 'false')
+        ]))
+        result = self.interpreter.visit_compare_expr(node)
+        self.assertEqual(result, True)
+
+    def test_not_equal_boolean_false(self):
+        node = (DummyNode('compare_expr', [
+            Token('BOOLEAN', 'true'),
+            Token('EQ_OP', '!='),
+            Token('BOOLEAN', 'true')
         ]))
         result = self.interpreter.visit_compare_expr(node)
         self.assertEqual(result, False)

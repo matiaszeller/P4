@@ -2,5 +2,5 @@ Language EN
 Case camelCase
 
 function noType main(){
-  true and true
+    output x
 }

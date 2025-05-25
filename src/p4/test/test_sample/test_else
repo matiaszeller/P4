@@ -2,8 +2,8 @@ Language EN
 Case snake_case
 
 function noType main(){
-    new integer price = 50
-    if price > 100 then {
+    new integer price = 150
+    if price < 100 then {
         output "discount applied"
     } else {
         output "discount not applied"
