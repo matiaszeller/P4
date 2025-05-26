@@ -3,7 +3,6 @@ from environment import Environment
 from error import TreeError, OperatorError, ArrayIndexError, ArrayDimensionError
 import ast
 
-
 class Interpreter:
     def __init__(self):
         self.env = Environment()
@@ -31,7 +30,9 @@ class Interpreter:
     def visit_block(self, node):
         for child in node.children:
             result = self.visit(child)
-            if result is not None:
+            if result == "FLAG_XXXXXXXXXXXXXXXX":
+                break
+            elif result is not None:
                 return result
         return None
 
@@ -76,7 +77,6 @@ class Interpreter:
                 result += operand
             else:
                 raise OperatorError(operator, node.line, "arithmetic")
-
         return result
 
     def visit_compare_expr(self, node):
@@ -156,6 +156,8 @@ class Interpreter:
             self.visit(block)
 
     def visit_return_stmt(self, node):
+        if len(node.children) == 0:
+            return "FLAG_XXXXXXXXXXXXXXXX"
         return self.visit(node.children[0])
 
     ## User Interactions
@@ -231,7 +233,7 @@ class Interpreter:
 
     ## Syntax
     def visit_syntax(self, node):
-        print(f"You are programming in {node.children[0]} using {node.children[1]}\n")
+        return
 
     ## Helper Functions
     def has_value(self, node):

@@ -1,0 +1,7 @@
+Language EN
+Case camelCase
+
+function noType main(){
+    new integer a[] = 10
+    output a
+}

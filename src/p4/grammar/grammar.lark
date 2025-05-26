@@ -5,7 +5,7 @@
 %ignore WS_INLINE
 %ignore COMMENT
 
-start: syntax NEWLINE* function_definition (NEWLINE* function_definition)*
+start: syntax NEWLINE* function_definition (NEWLINE* function_definition)* NEWLINE*
 
 syntax: "Language" LANG NEWLINE "Case" CASE NEWLINE
 
@@ -26,14 +26,14 @@ assignment_stmt: lvalue "=" expr
 declaration_stmt: _NEW TYPE ID array_suffix* ["=" expr]
 if_stmt: _IF expr _THEN block [_ELSE block]
 while_stmt: _WHILE expr _DO block
-return_stmt: _RETURN expr
+return_stmt: _RETURN [expr]
 output_stmt: _OUTPUT expr
-expr_stmt: expr
+expr_stmt: postfix_expr
 
 input_expr: _INPUT
 ?expr: or_expr
-?or_expr: and_expr ("or" and_expr)*
-?and_expr: equality_expr ("and" equality_expr)*
+?or_expr: and_expr (_OR and_expr)*
+?and_expr: equality_expr (_AND equality_expr)*
 ?equality_expr: relational_expr (EQ_OP relational_expr)?
 EQ_OP: "==" | "!="
 ?relational_expr: add_expr (REL_OP add_expr)?
