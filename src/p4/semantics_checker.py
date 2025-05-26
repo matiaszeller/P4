@@ -1,7 +1,5 @@
 from dataclasses import dataclass  # Lightweight record for function metadata
 from collections import ChainMap  # Nested, write-through symbol tables
-#from importlib.metadata import pass_none
-from operator import index
 from typing import List, Dict  # Static typing helpers
 from lark import Tree, Token  # AST node and token classes from Lark
 
