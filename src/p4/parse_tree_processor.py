@@ -15,6 +15,8 @@ KEYWORDS = {
         RETURN="return",
         OUTPUT="output",
         INPUT="input",
+        OR="or",
+        AND="and"
     ),
     "DK": dict(
         FUNCTION="funktion",
@@ -27,6 +29,8 @@ KEYWORDS = {
         RETURN="returner",
         OUTPUT="udskriv",
         INPUT="indskriv",
+        OR="eller",
+        AND="og"
     ),
 }
 
@@ -43,7 +47,7 @@ TYPE_MAP = {
     "ingenType": "noType",
 }
 
-BASE_GRAMMAR = Path("grammar/grammar.lark").read_text(encoding="utf-8")
+BASE_GRAMMAR = (Path(__file__).resolve().parent / "grammar" / "grammar.lark").read_text(encoding="utf-8")
 
 HEADER_RE = re.compile(r"^Language\s+(EN|DK)\s*$", re.IGNORECASE)
 
@@ -93,8 +97,8 @@ class ParseTreeProcessor(Transformer):
     def lvalue(self, items): return Tree('lvalue', items)
     def expr_stmt(self, items): return Tree('expr_stmt', items)
 
-    def add_expr(self, items): return Tree('arit_expr', items)
-    def mul_expr(self, items): return Tree('arit_expr', items)
+    def add_expr(self, items): return self.arit_expr(items)
+    def mul_expr(self, items): return self.arit_expr(items)
 
     def arit_expr(self, items):
         if len(items) == 1:

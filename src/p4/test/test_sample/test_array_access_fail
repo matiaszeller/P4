@@ -1,0 +1,8 @@
+Language EN
+Case camelCase
+
+function noType main(){
+    new integer a[3] = [1, 2, 3]
+    new integer x = a[3]
+    output x
+}

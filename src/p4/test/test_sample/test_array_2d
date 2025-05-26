@@ -1,0 +1,8 @@
+Language EN
+Case camelCase
+
+function noType main(){
+    new integer a[2][2] = [[1,2],[3,4]]
+    new integer x = a[1][0]
+    output x
+}

@@ -99,16 +99,9 @@ class ArrayDimensionAccessError(TypeError_):
     def __init__(self, array_identifier, declared_dimensions, line):
         message = f"Cannot access a dimension in array {array_identifier} greater than the declared amount of {declared_dimensions} dimensions."
         super().__init__(message, line)
-class AssignNoTypeError(TypeError_):
+class AssignNoReturnError(TypeError_):
     def __init__(self, variable_identifier, function_identifier, declared_function_type, line: int | None = None):
-        message = f"Cannot initialize variable {variable_identifier} with {function_identifier}. Variables with type {declared_function_type} has no value to be assigned."
-        super().__init__(message, line)
-class UnaryExpressionError(TypeError_):
-    def __init__(self, error_type, type_, line):
-        if error_type == "negate":
-            message = f"Cannot negate a variable of type {type_}. Only boolean values can negates."
-        elif error_type == "uminus":
-            message = f"Cannot reverse the sign of a variable of type {type_}. Only the sign of numeric values can be reversed."
+        message = f"Cannot initialize variable {variable_identifier} with function {function_identifier} that has return type {declared_function_type} and therefore returns no value."
         super().__init__(message, line)
 
 class ScopeError(StaticError): pass# Type mismatch or misuse
@@ -144,8 +137,8 @@ class CaseStyleError(CaseError):
 
 class StructureError(StaticError):  pass # Violations of language structure rules
 class ReturnStatementOfnoTypeFunctionError(StructureError):
-    def __init__(self, value, type_, line):
-        message = (f"Cannot exit scope of function by returning value {value} of type {type_}. A function with return type noType cannot return any value. \n"
+    def __init__(self, value, line):
+        message = (f"Cannot exit scope of function by returning value {value}. A function with return type noType cannot return any value. \n"
                                      f"Fix: Delete value {value} from return statement or redefine return type of function to match type of returned value.")
         super().__init__(message, line)
 class NoReturnError(StructureError):
@@ -192,7 +185,6 @@ class SemanticsChecker:
         self.case_style: str = "camelCase"  # Active identifier style, set by syntax header
         self.function_order: list[str] = []  # Definition order, used to enforce 'main' last
         self.in_expr_stmt: bool = False  # Suppresses "void value" error in expression statements
-        self.in_assignment: bool = False
         self.seen_returns: list[str] = []
 
     # main entry
@@ -302,24 +294,27 @@ class SemanticsChecker:
 
     # variable declarations
     def visit_declaration_stmt(self, node: Tree):
-        base = node.children[0]
-        name = node.children[1]
-        sizes, index_ = self.collect_sizes(node.children, 2)
+        base = node.children[0].value
+        name = node.children[1].value
+        sizes, idx = self.collect_sizes(node.children, 2)
 
         self.check_case(name)
         self.shadow_check(name)
 
         declared_type = base + "[]" * len(sizes)
-        # starting to look at the content after "="
-        if index_ < len(node.children):
-            self.in_assignment = True
-            right_hand_side_node = node.children[index_]# takes the whole right hand side of "=" and assigns it to child
-            if isinstance(right_hand_side_node, Token): #if the right handside is just some value or variable
-                right_hand_side_type = self.visit(right_hand_side_node)
-                if right_hand_side_type == "noType" and not self.is_input_expr(right_hand_side_node): #is_input_expr returner KUN hvis vi bruger input
-                    line = self.get_line_from_tree(node)
-                    raise AssignNoTypeError(name, right_hand_side_node, right_hand_side_type, line)
+
+        right_hand_side_node = None
+        if idx < len(node.children):
+            child = node.children[idx]
+            right_hand_side_node = node.children[idx + 1] if isinstance(child, Token) and child.value == "=" else child
+            if isinstance(right_hand_side_node, list):
+                right_hand_side_node = right_hand_side_node[0] if right_hand_side_node else None
+
+        if right_hand_side_node is not None:
             right_hand_side_type = self.visit(right_hand_side_node)
+            if right_hand_side_type == "noType" and not self.is_input_expr(right_hand_side_node):
+                line = self.get_line_from_tree(node)
+                raise AssignNoReturnError(name, right_hand_side_node.children[0].value, right_hand_side_type, line)
             if right_hand_side_type != declared_type and right_hand_side_type != "noType":
                 line = self.get_line_from_tree(node)
                 raise IncompatibleTypeError(right_hand_side_node, right_hand_side_type, name, declared_type, line)
@@ -332,7 +327,6 @@ class SemanticsChecker:
                     length = len(literal_elements)
                     raise IncompatibleArraySizeError(name, sizes[0], length)
 
-        self.in_assignment = False
         self.variable_map[name] = declared_type
 
     # assignments
@@ -341,7 +335,6 @@ class SemanticsChecker:
         right_hand_side_node = node.children[-1]
         # identifier being assigned to
         name = left_value.children[0].value
-        self.in_assignment = True
         if name not in self.variable_map:
             line = self.get_line_from_tree(node)
             raise UndefinedIdentifierError(name, line)
@@ -381,7 +374,7 @@ class SemanticsChecker:
         if right_hand_side_type not in {expected_type, "noType"}:
             line = self.get_line_from_tree(node)
             raise IncompatibleTypeError(right_hand_side_node, right_hand_side_type, name, expected_type, line)
-        self.in_assignment = False
+
     # control flow
     def visit_if_stmt(self, node: Tree):
         if self.visit(node.children[0]) != "boolean":
@@ -405,9 +398,8 @@ class SemanticsChecker:
         if self.current_return_type == "noType":
             if len(node.children) != 0:
                 value = node.children[0].value
-                type_ = self.visit(node.children[0])
                 line = self.get_line_from_tree(node)
-                raise ReturnStatementOfnoTypeFunctionError(value, type_, line)
+                raise ReturnStatementOfnoTypeFunctionError(value, line)
             else:
                 return
         else:
@@ -422,6 +414,7 @@ class SemanticsChecker:
     # expression statement
     def visit_expr_stmt(self, node: Tree):
         previous = self.in_expr_stmt
+        self.in_expr_stmt = True  # Suppress "void value" error for RHS 'noType'
         self.visit(node.children[0])
         self.in_expr_stmt = previous
 
@@ -477,24 +470,6 @@ class SemanticsChecker:
                 line = self.get_line_from_tree(node)
                 raise LogicalExpressionTypeError(operand_index, actual_type, line)
         return "boolean"
-
-    # unary expressions
-    def visit_uminus(self, node: Tree):
-        type_ = self.visit(node.children[1])
-        if type_ not in self._NUM:
-            error_type = "uminus"
-            line = self.get_line_from_tree(node)
-            raise UnaryExpressionError(error_type, type_, line)
-        return type_
-
-    def visit_negate(self, node: Tree):
-        type_ = self.visit(node.children[0])
-        if type_ != "boolean":
-            error_type = "negate"
-            line = self.get_line_from_tree(node)
-            raise UnaryExpressionError(error_type, type_,line)
-        return type_
-
 
     # array literal
     def visit_array_literal(self, node: Tree):
@@ -570,8 +545,7 @@ class SemanticsChecker:
 
         # Using a void/noType value inside an expression (except expr_stmt) is illegal
         if current_type == "noType" and not self.in_expr_stmt: #what is this used for?
-            line = self.get_line_from_tree(node)
-            raise TypeError_(f"void value used in expression + {line}")
+            raise TypeError_("void value used in expression")
         return current_type
 
     # input literal
@@ -580,6 +554,7 @@ class SemanticsChecker:
             return "noType"  # Represents read-from-stdin; has no concrete type
         else:
             raise TypeError_(f"input must be assigned to some variable")
+
     # helpers below
     # identifier case enforcement
     def check_case(self, name: str):

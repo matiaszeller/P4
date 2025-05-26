@@ -1,14 +1,13 @@
 Language EN
 Case camelCase
 
-
-function noType acceptingCase( integer x) {
-    new integer y = 3 + x
-    output y
+function integer test(integer x){
+    new integer x = 1
+    return x
 }
 
-
-function noType main() {
-    new integer f = 5
-    acceptingCase(f)
+function noType main(){
+    new integer x = 2
+    new integer y = test(1)
+    output x
 }

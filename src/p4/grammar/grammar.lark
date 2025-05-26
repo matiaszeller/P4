@@ -32,8 +32,8 @@ expr_stmt: postfix_expr
 
 input_expr: _INPUT
 ?expr: or_expr
-?or_expr: and_expr ("or" and_expr)*
-?and_expr: equality_expr ("and" equality_expr)*
+?or_expr: and_expr (_OR and_expr)*
+?and_expr: equality_expr (_AND equality_expr)*
 ?equality_expr: relational_expr (EQ_OP relational_expr)?
 EQ_OP: "==" | "!="
 ?relational_expr: add_expr (REL_OP add_expr)?

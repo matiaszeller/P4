@@ -1,0 +1,6 @@
+Language EN
+Case camelCase
+
+function noType main() {
+    output 10 + 5 * 6 - 3 / 2
+}

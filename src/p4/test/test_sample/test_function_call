@@ -1,0 +1,11 @@
+Language EN
+Case camelCase
+
+function string textFile(){
+    new string x = input
+    return x
+}
+
+function noType main(){
+    output textFile()
+}
