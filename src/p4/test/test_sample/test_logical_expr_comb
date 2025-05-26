@@ -1,0 +1,6 @@
+Language EN
+Case camelCase
+
+function noType main(){
+    output 1 > 2 and 2 > 1
+}

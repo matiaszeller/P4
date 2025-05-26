@@ -1,3 +1,4 @@
+
 import sys
 from lark.tree import pydot__tree_to_png
 from semantics_checker import SemanticsChecker

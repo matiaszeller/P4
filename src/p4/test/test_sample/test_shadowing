@@ -1,0 +1,8 @@
+Language EN
+Case camelCase
+
+function noType main(){
+    new integer x = 10
+    new decimal x = 10.5
+    output x
+}

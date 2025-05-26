@@ -1,0 +1,6 @@
+Language EN
+Case camelCase
+
+function noType main(){
+    output 5 * 5 >= 10 % 2 == true
+}

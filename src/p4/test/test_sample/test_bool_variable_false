@@ -1,0 +1,11 @@
+Language EN
+Case camelCase
+
+function noType main(){
+    new boolean x = false
+    if x then {
+        output "True working"
+    } else {
+        output "False working"
+    }
+}
