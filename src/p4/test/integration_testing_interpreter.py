@@ -1,5 +1,6 @@
 import unittest
 
+from lark.exceptions import UnexpectedCharacters
 from io import StringIO
 from unittest.mock import patch
 from pathlib import Path
@@ -23,13 +24,13 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("38.5", output)
 
@@ -41,13 +42,13 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("True", output)
 
@@ -59,13 +60,13 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("False", output)
 
@@ -77,51 +78,37 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("10", output)
 
     def test_shadowing(self):
-        try:
-            # open test source
-            with open("test_sample/test_shadowing", "r") as src_file:
-                sample_input = src_file.read()
-        except FileNotFoundError:
-            print("Error reading file")
-            return
-        interpretor = Interpreter()
-        tree = parser.parse(sample_input)
-        processor = ParseTreeProcessor()
-        processed_tree = processor.transform(tree)
+        with open("test_sample/test_shadowing") as src:
+            sample_input = src.read()
 
-        with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
-            output = fake_out.getvalue().strip()
-            self.assertIn("5", output)
+        interpreter = Interpreter()
+        tree       = parser.parse(sample_input)
+        processed  = ParseTreeProcessor().transform(tree)
+
+        with self.assertRaisesRegex(NameError, r'Variable x already exists'):
+            interpreter.visit(processed)
 
     def test_undeclared(self):
-        try:
-            # open test source
-            with open("test_sample/test_undeclared", "r") as src_file:
-                sample_input = src_file.read()
-        except FileNotFoundError:
-            print("Error reading file")
-            return
-        interpretor = Interpreter()
-        tree = parser.parse(sample_input)
-        processor = ParseTreeProcessor()
-        processed_tree = processor.transform(tree)
+        with open("test_sample/test_undeclared") as src:
+            sample_input = src.read()
 
-        with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
-            output = fake_out.getvalue().strip()
-            self.assertIn("5", output)
+        interpreter = Interpreter()
+        tree       = parser.parse(sample_input)
+        processed  = ParseTreeProcessor().transform(tree)
+
+        with self.assertRaisesRegex(NameError, r'Variable x is not defined'):
+            interpreter.visit(processed)
 
     def test_if(self):
         try:
@@ -131,13 +118,13 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("discount applied", output)
 
@@ -149,13 +136,13 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("discount not applied", output)
 
@@ -167,13 +154,13 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("True working", output)
 
@@ -185,13 +172,13 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("False working", output)
 
@@ -203,13 +190,13 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("5", output)
 
@@ -221,13 +208,13 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("1", output)
 
@@ -239,13 +226,13 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("2", output)
 
@@ -257,51 +244,35 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("3", output)
 
-    #def test_array_assign_fail(self):
-    #    try:
-    #        # open test source
-    #        with open("test_sample/test_array_assign_fail", "r") as src_file:
-    #            sample_input = src_file.read()
-    #    except FileNotFoundError:
-    #        print("Error reading file")
-    #        return
-    #    interpretor = Interpreter()
-    #    tree = parser.parse(sample_input)
-    #    processor = ParseTreeProcessor()
-    #    processed_tree = processor.transform(tree)
+    def test_array_assign_fail(self):
+        with open("test_sample/test_array_assign_fail") as src:
+            sample_input = src.read()
+        with self.assertRaises(UnexpectedCharacters):
+            tree = parser.parse(sample_input)
 
-    #    with patch('sys.stdout', new=StringIO()) as fake_out:
-    #        interpretor.visit(processed_tree)
-    #        output = fake_out.getvalue().strip()
-    #        self.assertIn("5", output)
+    def test_array_access_fail(self):
+        try:
+            with open("test_sample/test_array_access_fail", "r") as src_file:
+                sample_input = src_file.read()
+        except FileNotFoundError:
+            print("Error reading file")
+            return
+        interpreter = Interpreter()
+        tree = parser.parse(sample_input)
+        processed = ParseTreeProcessor().transform(tree)
 
-    #def test_array_access_fail(self):
-    #    try:
-    #        # open test source
-    #        with open("test_sample/test_array_access_fail", "r") as src_file:
-    #            sample_input = src_file.read()
-    #    except FileNotFoundError:
-    #        print("Error reading file")
-    #        return
-    #    interpretor = Interpreter()
-    #    tree = parser.parse(sample_input)
-    #    processor = ParseTreeProcessor()
-    #    processed_tree = processor.transform(tree)
-
-    #    with patch('sys.stdout', new=StringIO()) as fake_out:
-    #        interpretor.visit(processed_tree)
-    #        output = fake_out.getvalue().strip()
-    #        self.assertIn("5", output)
+        with self.assertRaisesRegex(IndexError, r'Array index 3 out of range'):
+            interpreter.visit(processed)
 
     def test_function_call(self):
         try:
@@ -311,12 +282,12 @@ class integration_testing_interpreter(unittest.TestCase):
         except FileNotFoundError:
             print("Error reading file")
             return
-        interpretor = Interpreter()
+        interpreter = Interpreter()
         tree = parser.parse(sample_input)
         processor = ParseTreeProcessor()
         processed_tree = processor.transform(tree)
 
         with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
+            interpreter.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("", output)
