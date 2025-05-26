@@ -87,41 +87,41 @@ class integration_testing_interpreter(unittest.TestCase):
             output = fake_out.getvalue().strip()
             self.assertIn("10", output)
 
-    #def test_shadowing(self):
-    #    try:
-    #        # open test source
-    #        with open("test_sample/test_shadowing", "r") as src_file:
-    #            sample_input = src_file.read()
-    #    except FileNotFoundError:
-    #        print("Error reading file")
-    #        return
-    #    interpretor = Interpreter()
-    #    tree = parser.parse(sample_input)
-    #    processor = ParseTreeProcessor()
-    #    processed_tree = processor.transform(tree)
+    def test_shadowing(self):
+        try:
+            # open test source
+            with open("test_sample/test_shadowing", "r") as src_file:
+                sample_input = src_file.read()
+        except FileNotFoundError:
+            print("Error reading file")
+            return
+        interpretor = Interpreter()
+        tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
-    #    with patch('sys.stdout', new=StringIO()) as fake_out:
-    #        interpretor.visit(processed_tree)
-    #        output = fake_out.getvalue().strip()
-    #        self.assertIn("5", output)
+        with patch('sys.stdout', new=StringIO()) as fake_out:
+            interpretor.visit(processed_tree)
+            output = fake_out.getvalue().strip()
+            self.assertIn("5", output)
 
-    # def test_undeclared(self):
-    #    try:
-    #        # open test source
-    #        with open("test_sample/test_undeclared", "r") as src_file:
-    #            sample_input = src_file.read()
-    #    except FileNotFoundError:
-    #        print("Error reading file")
-    #        return
-    #    interpretor = Interpreter()
-    #    tree = parser.parse(sample_input)
-    #    processor = ParseTreeProcessor()
-    #    processed_tree = processor.transform(tree)
+    def test_undeclared(self):
+        try:
+            # open test source
+            with open("test_sample/test_undeclared", "r") as src_file:
+                sample_input = src_file.read()
+        except FileNotFoundError:
+            print("Error reading file")
+            return
+        interpretor = Interpreter()
+        tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
 
-    #    with patch('sys.stdout', new=StringIO()) as fake_out:
-    #        interpretor.visit(processed_tree)
-    #        output = fake_out.getvalue().strip()
-    #        self.assertIn("5", output)
+        with patch('sys.stdout', new=StringIO()) as fake_out:
+            interpretor.visit(processed_tree)
+            output = fake_out.getvalue().strip()
+            self.assertIn("5", output)
 
     def test_if(self):
         try:
