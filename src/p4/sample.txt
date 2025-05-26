@@ -1,11 +1,13 @@
 Language EN
 Case camelCase
 
-function string textFile(){
-    new string x = input
+function integer test(integer x){
+    new integer x = 1
     return x
 }
 
 function noType main(){
-    output textFile()
+    new integer x = 2
+    new integer y = test(1)
+    output x
 }

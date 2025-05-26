@@ -47,7 +47,7 @@ TYPE_MAP = {
     "ingenType": "noType",
 }
 
-BASE_GRAMMAR = Path("grammar/grammar.lark").read_text(encoding="utf-8")
+BASE_GRAMMAR = (Path(__file__).resolve().parent / "grammar" / "grammar.lark").read_text(encoding="utf-8")
 
 HEADER_RE = re.compile(r"^Language\s+(EN|DK)\s*$", re.IGNORECASE)
 
