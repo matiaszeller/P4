@@ -576,8 +576,6 @@ class SemanticsChecker:
 
     # input literal
     def visit_input_expr(self, node):
-        print(f"HUH? {node}")#hvorfor er der _??
-        #if node.data == "declaration_stmt" or
         if self.in_assignment:
             return "noType"  # Represents read-from-stdin; has no concrete type
         else:
