@@ -13,6 +13,8 @@ class DummyNode(Tree):
     def __init__(self, rule_name, children):
         super().__init__(rule_name, children)
 
+
+
 class test_arit_expr(unittest.TestCase):
     def setUp(self):
         class TestSemantics(SemanticsChecker):

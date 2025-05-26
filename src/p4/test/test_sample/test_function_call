@@ -2,7 +2,8 @@ Language EN
 Case camelCase
 
 function string textFile(){
-    return "Hello world"
+    new string x = input
+    return x
 }
 
 function noType main(){

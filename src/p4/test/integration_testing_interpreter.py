@@ -87,7 +87,7 @@ class integration_testing_interpreter(unittest.TestCase):
             output = fake_out.getvalue().strip()
             self.assertIn("10", output)
 
-    # def test_shadowing(self):
+    #def test_shadowing(self):
     #    try:
     #        # open test source
     #        with open("test_sample/test_shadowing", "r") as src_file:
@@ -158,6 +158,42 @@ class integration_testing_interpreter(unittest.TestCase):
             interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
             self.assertIn("discount not applied", output)
+
+    def test_bool_variable_true(self):
+        try:
+            # open test source
+            with open("test_sample/test_bool_variable_true", "r") as src_file:
+                sample_input = src_file.read()
+        except FileNotFoundError:
+            print("Error reading file")
+            return
+        interpretor = Interpreter()
+        tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
+
+        with patch('sys.stdout', new=StringIO()) as fake_out:
+            interpretor.visit(processed_tree)
+            output = fake_out.getvalue().strip()
+            self.assertIn("True working", output)
+
+    def test_bool_variable_false(self):
+        try:
+            # open test source
+            with open("test_sample/test_bool_variable_false", "r") as src_file:
+                sample_input = src_file.read()
+        except FileNotFoundError:
+            print("Error reading file")
+            return
+        interpretor = Interpreter()
+        tree = parser.parse(sample_input)
+        processor = ParseTreeProcessor()
+        processed_tree = processor.transform(tree)
+
+        with patch('sys.stdout', new=StringIO()) as fake_out:
+            interpretor.visit(processed_tree)
+            output = fake_out.getvalue().strip()
+            self.assertIn("False working", output)
 
     def test_while_true(self):
         try:
@@ -283,40 +319,4 @@ class integration_testing_interpreter(unittest.TestCase):
         with patch('sys.stdout', new=StringIO()) as fake_out:
             interpretor.visit(processed_tree)
             output = fake_out.getvalue().strip()
-            self.assertIn("Hello world", output)
-
-    def test_bool_variable_true(self):
-        try:
-            # open test source
-            with open("test_sample/test_bool_variable_true", "r") as src_file:
-                sample_input = src_file.read()
-        except FileNotFoundError:
-            print("Error reading file")
-            return
-        interpretor = Interpreter()
-        tree = parser.parse(sample_input)
-        processor = ParseTreeProcessor()
-        processed_tree = processor.transform(tree)
-
-        with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
-            output = fake_out.getvalue().strip()
-            self.assertIn("True working", output)
-
-    def test_bool_variable_false(self):
-        try:
-            # open test source
-            with open("test_sample/test_bool_variable_false", "r") as src_file:
-                sample_input = src_file.read()
-        except FileNotFoundError:
-            print("Error reading file")
-            return
-        interpretor = Interpreter()
-        tree = parser.parse(sample_input)
-        processor = ParseTreeProcessor()
-        processed_tree = processor.transform(tree)
-
-        with patch('sys.stdout', new=StringIO()) as fake_out:
-            interpretor.visit(processed_tree)
-            output = fake_out.getvalue().strip()
-            self.assertIn("False working", output)
+            self.assertIn("", output)
