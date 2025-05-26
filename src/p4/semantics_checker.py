@@ -549,8 +549,11 @@ class SemanticsChecker:
         return current_type
 
     # input literal
-    def visit_input_expr(self, _): #hvorfor er der _??
-        return "noType"  # Represents read-from-stdin; has no concrete type
+    def visit_input_expr(self, node):
+        if self.in_assignment:
+            return "noType"  # Represents read-from-stdin; has no concrete type
+        else:
+            raise TypeError_(f"input must be assigned to some variable")
 
     # helpers below
     # identifier case enforcement
