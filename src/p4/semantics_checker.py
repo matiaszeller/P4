@@ -302,8 +302,8 @@ class SemanticsChecker:
 
     # variable declarations
     def visit_declaration_stmt(self, node: Tree):
-        base = node.children[0]
-        name = node.children[1]
+        base = node.children[0].value
+        name = node.children[1].value
         sizes, index_ = self.collect_sizes(node.children, 2)
 
         self.check_case(name)
