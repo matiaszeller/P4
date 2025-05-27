@@ -1,6 +1,6 @@
 from lark import Tree, Token
-from environment import Environment
-from error import TreeError, OperatorError, ArrayIndexError, ArrayDimensionError
+from src.p4.environment import Environment
+from src.p4.error import TreeError, OperatorError, ArrayIndexError, ArrayDimensionError
 import ast
 
 class Interpreter:

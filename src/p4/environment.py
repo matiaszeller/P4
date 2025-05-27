@@ -1,4 +1,4 @@
-from error import BooleanError, UndeclaredNameError, UnknownTypeError, DuplicateNameError, IndexRangeError
+from src.p4.error import BooleanError, UndeclaredNameError, UnknownTypeError, DuplicateNameError, IndexRangeError
 from src.p4.error import OverIndexedError
 
 
