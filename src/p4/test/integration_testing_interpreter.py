@@ -7,7 +7,7 @@ from pathlib import Path
 from src.p4.interpreter import Interpreter
 from src.p4.parse_tree_processor import make_parser
 from src.p4.parse_tree_processor import ParseTreeProcessor
-
+from src.p4.error import IndexRangeError, UndeclaredNameError, DuplicateNameError
 
 GRAMMAR_PATH = Path(__file__).resolve().parents[1] / "grammar" / "grammar.lark"
 with open(GRAMMAR_PATH, "r", encoding="utf-8") as grammar_file:
@@ -96,7 +96,7 @@ class integration_testing_interpreter(unittest.TestCase):
         tree       = parser.parse(sample_input)
         processed  = ParseTreeProcessor().transform(tree)
 
-        with self.assertRaisesRegex(NameError, r'Variable x already exists'):
+        with self.assertRaisesRegex(DuplicateNameError, r'Duplicate name'):
             interpreter.visit(processed)
 
     def test_undeclared(self):
@@ -107,7 +107,7 @@ class integration_testing_interpreter(unittest.TestCase):
         tree       = parser.parse(sample_input)
         processed  = ParseTreeProcessor().transform(tree)
 
-        with self.assertRaisesRegex(NameError, r'Variable x is not defined'):
+        with self.assertRaisesRegex(UndeclaredNameError, r'Undeclared name'):
             interpreter.visit(processed)
 
     def test_if(self):
@@ -271,7 +271,7 @@ class integration_testing_interpreter(unittest.TestCase):
         tree = parser.parse(sample_input)
         processed = ParseTreeProcessor().transform(tree)
 
-        with self.assertRaisesRegex(IndexError, r'Array index 3 out of range'):
+        with self.assertRaisesRegex(IndexRangeError, r'exceeds the upper limit'):
             interpreter.visit(processed)
 
     def test_function_call(self):

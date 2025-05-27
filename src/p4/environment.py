@@ -1,3 +1,7 @@
+from src.p4.error import BooleanError, UndeclaredNameError, UnknownTypeError, DuplicateNameError, IndexRangeError
+from src.p4.error import OverIndexedError
+
+
 class Environment:
     def __init__(self):
         self.variables = {}
@@ -7,36 +11,33 @@ class Environment:
     def base(self, type_str):
         return type_str.split("[")[0]
 
-    def coerce_scalar(self, value, type_str):
+    def coerce_scalar(self, value, type_str, line=None):
         if not isinstance(value, str):
             return value
         base = self.base(type_str)
-        try:
-            if base == "integer":
-                return int(value)
-            if base == "decimal":
-                return float(value)
-            if base == "boolean":
-                if value == "true" or value == "sand":
-                    return True
-                if value == "false" or value == "falsk":
-                    return False
-                raise ValueError
-            if base == "string":
-                return value
-        except ValueError:
-            raise TypeError(f"Cannot convert '{value}' to {base}")
-        raise TypeError(f"Unknown type '{base}'")
+        if base == "integer":
+            return int(value)
+        if base == "decimal":
+            return float(value)
+        if base == "boolean":
+            if value == "true" or value == "sand":
+                return True
+            if value == "false" or value == "falsk":
+                return False
+            raise BooleanError(value, line)
+        if base == "string":
+            return value
+        raise UnknownTypeError(base, line=line)
 
-    def coerce_any(self, val, type_str):
+    def coerce_any(self, val, type_str, line=None):
         if isinstance(val, list):
-            return [self.coerce_any(v, type_str) for v in val]
-        return self.coerce_scalar(val, type_str)
+            return [self.coerce_any(v, type_str, line=line) for v in val]
+        return self.coerce_scalar(val, type_str, line=line)
 
     # variable handling
-    def declare_variable(self, name, type, sizes=None):
+    def declare_variable(self, name, type, sizes=None, line=None):
         if name in self.variables:
-            raise NameError(f'Variable {name} already exists')
+            raise DuplicateNameError(name,line)
         if sizes is None:
             sizes = []
         self.variables[name] = {
@@ -50,9 +51,9 @@ class Environment:
             return None
         return [self.make_array(sizes, depth + 1) for _ in range(sizes[depth])]
 
-    def get_variable(self, name, array_index=None):
+    def get_variable(self, name, array_index=None, line=None):
         if name not in self.variables:
-            raise NameError(f'Variable {name} is not defined')
+            raise UndeclaredNameError(name, line)
         var = self.variables[name]
         value = var['value']
 
@@ -60,22 +61,22 @@ class Environment:
             return value
 
         if len(array_index) > len(var['sizes']):
-            raise IndexError('Too many indices for array')
+            raise OverIndexedError(array_index, len(var['sizes']), line)
 
         for depth, idx in enumerate(array_index):
             if idx >= var['sizes'][depth]:
-                raise IndexError(f'Array index {idx} out of range')
+                raise IndexRangeError(idx, var['sizes'][depth], line)
             value = value[idx]
         return value
 
     # assignment with shape checking + coercion
-    def set_variable(self, name, value, array_index=None):
+    def set_variable(self, name, value, array_index=None, line=None):
         if name not in self.variables:
-            raise NameError(f'Variable {name} is not defined')
+            raise UndeclaredNameError(name, line=line)
 
         var   = self.variables[name]
         sizes = var['sizes']
-        value = self.coerce_any(value, var['type'])
+        value = self.coerce_any(value, var['type'], line=line)
 
         # whole-variable assignment
         if array_index is None:
