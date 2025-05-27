@@ -153,7 +153,9 @@ class Interpreter:
         condition = node.children[0]
         block = node.children[1]
         while self.visit(condition):
-            self.visit(block)
+            result = self.visit(block)
+            if result is not None:
+                return result
 
     def visit_return_stmt(self, node):
         if len(node.children) == 0:
